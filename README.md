@@ -12,6 +12,10 @@ Here's a snippet of the example in this crate. This app will load a slippy tile 
 
 Run with: `cargo run --example simple`
 
+
+https://user-images.githubusercontent.com/14075649/214139995-c69fc4c7-634e-487a-af0d-a8ac42b6851f.mp4
+
+
 ```rust
 const LATITUDE: f64 = 45.4111;
 const LONGITUDE: f64 = -75.6980;
