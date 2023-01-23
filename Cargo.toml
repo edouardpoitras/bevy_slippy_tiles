@@ -1,0 +1,16 @@
+[package]
+name = "bevy_slippy_tiles"
+version = "0.1.0"
+edition = "2021"
+description = "Provides slippy tile fetching functionality in the Bevy game engine"
+license = "MIT"
+repository = "https://github.com/edouardpoitras/adversity"
+
+[dependencies]
+bevy = "0.9.1"
+futures-lite = "1.12"
+reqwest = { version = "0.11", features = ["blocking"] }
+
+[[example]]
+name = "simple"
+path = "examples/simple.rs"
