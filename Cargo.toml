@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "Provides slippy tile fetching functionality in the Bevy game engine"
 license = "MIT"
-repository = "https://github.com/edouardpoitras/adversity"
+repository = "https://github.com/edouardpoitras/bevy_slippy_tiles"
 
 [dependencies]
 bevy = "0.9.1"
