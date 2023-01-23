@@ -1,6 +1,6 @@
 [package]
 name = "bevy_slippy_tiles"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Provides slippy tile fetching functionality in the Bevy game engine"
 license = "MIT"

@@ -12,6 +12,8 @@ Here's a snippet of the example in this crate. This app will load a slippy tile 
 
 Run with: `cargo run --example simple`
 
+![](https://raw.githubusercontent.com/edouardpoitras/bevy_slippy_tiles/main/simple-example.mp4)
+
 ```rust
 const LATITUDE: f64 = 45.4111;
 const LONGITUDE: f64 = -75.6980;
