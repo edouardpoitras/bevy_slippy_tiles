@@ -1,5 +1,7 @@
 # Bevy Slippy Tiles
 
+[![Bevy Slippy Tiles](https://github.com/edouardpoitras/bevy_slippy_tiles/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/edouardpoitras/bevy_slippy_tiles/actions/workflows/rust.yml)
+
 A helper bevy plugin to handle downloading OpenStreetMap-compliant [slippy tiles](https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames).
 
 [`DownloadSlippyTilesEvent`] can be fired to request one or more slippy tile downloads.
