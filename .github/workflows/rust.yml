@@ -1,25 +1,22 @@
-name: bevy_slippy_tiles
-
+name: Bevy Slippy Tiles
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-
 env:
   RUSTFLAGS: "-Dwarnings" # Make sure CI fails on all warnings, including Clippy lints
   CARGO_TERM_COLOR: always
-
 jobs:
-  build:
-
+  Build:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
-    - name: Clippy
-      run: cargo clippy --all-targets --all-features
+    - name: Dependencies
+      run: sudo apt update && sudo apt install libasound2-dev libudev-dev && rustup update
     - name: Build
       run: cargo build --verbose
+    - name: Clippy
+      run: cargo clippy --all-targets --all-features
     - name: Tests
       run: cargo test --verbose

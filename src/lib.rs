@@ -31,7 +31,7 @@ impl SlippyTilesSettings {
     /// Will also create the tiles directory immediately.
     pub fn new(endpoint: &str, tiles_directory: &str) -> SlippyTilesSettings {
         // Need to ensure tiles folder exists.
-        std::fs::create_dir_all(format!("assets/{}", tiles_directory)).unwrap();
+        std::fs::create_dir_all(format!("assets/{tiles_directory}")).unwrap();
 
         SlippyTilesSettings {
             endpoint: endpoint.to_owned(),

@@ -52,8 +52,7 @@ pub fn download_slippy_tiles(
                     .contains_key(&(spc, zoom_level, tile_size));
                 // Save us the disk read if we've already fetched (unless cache is disabled).
                 if !already_downloaded || !use_cache {
-                    let file_exists =
-                        std::path::Path::new(&format!("assets/{}", filename)).exists();
+                    let file_exists = std::path::Path::new(&format!("assets/{filename}")).exists();
                     if !file_exists || !use_cache {
                         debug!(
                             "Fetching map tile at position {:?} with zoom level {:?}",
@@ -71,7 +70,7 @@ pub fn download_slippy_tiles(
                             };
                             let client = reqwest::blocking::Client::new();
                             let response = client
-                                .get(&target)
+                                .get(target)
                                 .header(reqwest::header::USER_AGENT, "bevy_slippy_tiles")
                                 .send()
                                 .expect("Failed to fetch tile image");
@@ -81,7 +80,7 @@ pub fn download_slippy_tiles(
                                     .expect("Could not get tile image from bytes"),
                             );
                             let mut file_out =
-                                std::fs::File::create(format!("assets/{}", filename)).unwrap();
+                                std::fs::File::create(format!("assets/{filename}")).unwrap();
                             std::io::copy(&mut content, &mut file_out).unwrap();
                             SlippyTileDownloadTaskResult {
                                 path: Path::new(&filename).to_path_buf(),
