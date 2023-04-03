@@ -215,7 +215,7 @@ pub struct SlippyTileDownloadedEvent {
     pub zoom_level: ZoomLevel,
     /// The [`Coordinates`] used for this downloaded slippy tile.
     pub coordinates: Coordinates,
-    /// The assets/ path where the slippy tile was downloaded - can be used directly with the [`AssetServer`].
+    /// The assets/ path where the slippy tile was downloaded - can be used directly with the Bevy `AssetServer`.
     pub path: PathBuf,
 }
 
