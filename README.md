@@ -18,7 +18,7 @@ Run with: `cargo run --example simple`
 https://user-images.githubusercontent.com/14075649/214139995-c69fc4c7-634e-487a-af0d-a8ac42b6851f.mp4
 
 
-```rust
+```rust,ignore
 use bevy::{ecs::schedule::ShouldRun, prelude::*};
 use bevy_slippy_tiles::{
     Coordinates, DownloadSlippyTilesEvent, Radius, SlippyTileCoordinates,
