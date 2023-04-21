@@ -2,7 +2,7 @@
 
 mod systems;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use bevy::{
     prelude::{App, Component, Plugin, Resource},
@@ -45,6 +45,11 @@ impl SlippyTilesSettings {
 
     pub fn get_tiles_directory(&self) -> PathBuf {
         self.tiles_directory.clone()
+    }
+
+    pub fn get_tiles_directory_string(&self) -> String {
+        //self.tiles_directory.as_path().to_str().unwrap()
+        self.tiles_directory.as_path().to_str().unwrap().to_string()
     }
 }
 
@@ -139,15 +144,77 @@ impl TileSize {
 #[derive(Debug)]
 pub struct Radius(pub u8);
 
+// Unique representation of a slippy tile download task.
+#[derive(Eq, PartialEq, Hash, Clone)]
+pub struct SlippyTileDownloadTaskKey {
+    slippy_tile_coordinates: SlippyTileCoordinates,
+    zoom_level: ZoomLevel,
+    tile_size: TileSize,
+}
+
 /// HashMap that keeps track of the slippy tiles that have been downloaded.
 #[derive(Resource)]
-pub struct SlippyTileDownloadStatus(
-    HashMap<(SlippyTileCoordinates, ZoomLevel, TileSize), TileDownloadStatus>,
-);
+pub struct SlippyTileDownloadStatus(HashMap<SlippyTileDownloadTaskKey, TileDownloadStatus>);
 
 impl SlippyTileDownloadStatus {
     pub fn new() -> SlippyTileDownloadStatus {
         SlippyTileDownloadStatus(HashMap::new())
+    }
+
+    pub fn insert(
+        &mut self,
+        x: u32,
+        y: u32,
+        zoom_level: ZoomLevel,
+        tile_size: TileSize,
+        filename: String,
+        download_status: DownloadStatus,
+    ) {
+        self.insert_with_coords(
+            SlippyTileCoordinates { x, y },
+            zoom_level,
+            tile_size,
+            filename,
+            download_status,
+        );
+    }
+
+    pub fn insert_with_coords(
+        &mut self,
+        slippy_tile_coordinates: SlippyTileCoordinates,
+        zoom_level: ZoomLevel,
+        tile_size: TileSize,
+        filename: String,
+        download_status: DownloadStatus,
+    ) {
+        self.0.insert(
+            SlippyTileDownloadTaskKey {
+                slippy_tile_coordinates,
+                zoom_level,
+                tile_size,
+            },
+            TileDownloadStatus {
+                path: Path::new(&filename).to_path_buf(),
+                load_status: download_status,
+            },
+        );
+    }
+
+    pub fn contains_key(&self, x: u32, y: u32, zoom_level: ZoomLevel, tile_size: TileSize) -> bool {
+        self.contains_key_with_coords(SlippyTileCoordinates { x, y }, zoom_level, tile_size)
+    }
+
+    pub fn contains_key_with_coords(
+        &self,
+        slippy_tile_coordinates: SlippyTileCoordinates,
+        zoom_level: ZoomLevel,
+        tile_size: TileSize,
+    ) -> bool {
+        self.0.contains_key(&SlippyTileDownloadTaskKey {
+            slippy_tile_coordinates,
+            zoom_level,
+            tile_size,
+        })
     }
 }
 
@@ -173,12 +240,40 @@ pub struct SlippyTileDownloadTaskResult {
 /// HashMap of all tiles currently being downloaded.
 #[derive(Resource)]
 pub struct SlippyTileDownloadTasks(
-    HashMap<(SlippyTileCoordinates, ZoomLevel, TileSize), Task<SlippyTileDownloadTaskResult>>,
+    HashMap<SlippyTileDownloadTaskKey, Task<SlippyTileDownloadTaskResult>>,
 );
 
 impl SlippyTileDownloadTasks {
     pub fn new() -> SlippyTileDownloadTasks {
         SlippyTileDownloadTasks(HashMap::new())
+    }
+
+    pub fn insert(
+        &mut self,
+        x: u32,
+        y: u32,
+        zoom_level: ZoomLevel,
+        tile_size: TileSize,
+        task: Task<SlippyTileDownloadTaskResult>,
+    ) {
+        self.insert_with_coords(SlippyTileCoordinates { x, y }, zoom_level, tile_size, task);
+    }
+
+    pub fn insert_with_coords(
+        &mut self,
+        slippy_tile_coordinates: SlippyTileCoordinates,
+        zoom_level: ZoomLevel,
+        tile_size: TileSize,
+        task: Task<SlippyTileDownloadTaskResult>,
+    ) {
+        self.0.insert(
+            SlippyTileDownloadTaskKey {
+                slippy_tile_coordinates,
+                zoom_level,
+                tile_size,
+            },
+            task,
+        );
     }
 }
 
@@ -204,6 +299,13 @@ pub struct DownloadSlippyTilesEvent {
     pub radius: Radius,
     /// If set to false, will force download of new tiles from the endpoint regardless of previous requests and tiles already on disk.
     pub use_cache: bool,
+}
+
+impl DownloadSlippyTilesEvent {
+    pub fn get_slippy_tile_coordinates(&self) -> SlippyTileCoordinates {
+        self.coordinates
+            .get_slippy_tile_coordinates(self.zoom_level)
+    }
 }
 
 /// The library will generate these events upon successful slippy tile downloads.
@@ -292,6 +394,48 @@ impl Coordinates {
     }
 }
 
+pub enum UseCache {
+    Yes,
+    No,
+}
+
+impl UseCache {
+    pub fn new(value: bool) -> UseCache {
+        match value {
+            true => UseCache::Yes,
+            _ => UseCache::No,
+        }
+    }
+}
+
+pub enum AlreadyDownloaded {
+    Yes,
+    No,
+}
+
+impl AlreadyDownloaded {
+    pub fn new(value: bool) -> AlreadyDownloaded {
+        match value {
+            true => AlreadyDownloaded::Yes,
+            _ => AlreadyDownloaded::No,
+        }
+    }
+}
+
+pub enum FileExists {
+    Yes,
+    No,
+}
+
+impl FileExists {
+    pub fn new(value: bool) -> FileExists {
+        match value {
+            true => FileExists::Yes,
+            _ => FileExists::No,
+        }
+    }
+}
+
 pub struct SlippyTilesPlugin;
 
 impl Plugin for SlippyTilesPlugin {
@@ -302,5 +446,17 @@ impl Plugin for SlippyTilesPlugin {
             .add_event::<SlippyTileDownloadedEvent>()
             .add_system(systems::download_slippy_tiles)
             .add_system(systems::download_slippy_tiles_completed);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tile_size_new() {
+        assert_eq!(TileSize::new(256), TileSize::Normal);
+        assert_eq!(TileSize::new(512), TileSize::Large);
+        assert_eq!(TileSize::new(1024), TileSize::Normal);
     }
 }
