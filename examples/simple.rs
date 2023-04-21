@@ -1,4 +1,4 @@
-use bevy::{ecs::schedule::ShouldRun, prelude::*};
+use bevy::prelude::*;
 use bevy_slippy_tiles::{
     Coordinates, DownloadSlippyTilesEvent, Radius, SlippyTileCoordinates,
     SlippyTileDownloadedEvent, SlippyTilesPlugin, SlippyTilesSettings, TileSize, ZoomLevel,
@@ -16,12 +16,7 @@ fn main() {
         ))
         .add_plugins(DefaultPlugins)
         .add_plugin(SlippyTilesPlugin)
-        .add_system_set(
-            SystemSet::new()
-                .with_run_criteria(ShouldRun::once)
-                .with_system(spawn_camera)
-                .with_system(request_slippy_tiles),
-        )
+        .add_startup_systems((spawn_camera, request_slippy_tiles))
         .add_system(display_slippy_tiles)
         .run();
 }
