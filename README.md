@@ -1,6 +1,10 @@
 # Bevy Slippy Tiles
 
 [![Bevy Slippy Tiles](https://github.com/edouardpoitras/bevy_slippy_tiles/actions/workflows/rust.yml/badge.svg?branch=main)](https://github.com/edouardpoitras/bevy_slippy_tiles/actions/workflows/rust.yml)
+[![Latest version](https://img.shields.io/crates/v/bevy_slippy_tiles.svg)](https://crates.io/crates/bevy_slippy_tiles)
+[![Documentation](https://docs.rs/bevy_slippy_tiles/badge.svg)](https://docs.rs/bevy_slippy_tiles)
+![MIT](https://img.shields.io/badge/license-MIT-blue.svg)
+![Apache](https://img.shields.io/badge/license-Apache-blue.svg)
 
 A helper bevy plugin to handle downloading OpenStreetMap-compliant [slippy tiles](https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames).
 
@@ -91,3 +95,9 @@ fn display_slippy_tiles(
     }
 }
 ```
+## Bevy Compatibility
+
+|bevy|bevy_renet|
+|---|---|
+|0.10|TBD|
+|0.9|0.1.3|
