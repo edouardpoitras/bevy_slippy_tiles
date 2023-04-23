@@ -48,7 +48,6 @@ impl SlippyTilesSettings {
     }
 
     pub fn get_tiles_directory_string(&self) -> String {
-        //self.tiles_directory.as_path().to_str().unwrap()
         self.tiles_directory.as_path().to_str().unwrap().to_string()
     }
 }
@@ -359,12 +358,7 @@ pub struct LatitudeLongitudeCoordinates {
 impl LatitudeLongitudeCoordinates {
     /// Get slippy tile coordinates based on a real-world lat/lon and zoom level.
     pub fn to_slippy_tile_coordinates(&self, zoom_level: ZoomLevel) -> SlippyTileCoordinates {
-        let lat_rad = self.latitude.to_radians();
-        let num_tiles = f64::powf(2.0, zoom_level.to_u8() as f64);
-        let x = ((self.longitude + 180.0_f64) / 360.0_f64 * num_tiles).round() as u32;
-        let y = ((1.0_f64 - (lat_rad.tan()).asinh() / std::f64::consts::PI) / 2.0_f64 * num_tiles)
-            .round() as u32;
-        SlippyTileCoordinates { x, y }
+        SlippyTileCoordinates::from_lat_lon_zoom(self.latitude, self.longitude, zoom_level)
     }
 }
 
@@ -458,5 +452,69 @@ mod tests {
         assert_eq!(TileSize::new(256), TileSize::Normal);
         assert_eq!(TileSize::new(512), TileSize::Large);
         assert_eq!(TileSize::new(1024), TileSize::Normal);
+    }
+
+    #[test]
+    fn test_slippy_tile_settings() {
+        let sts = SlippyTilesSettings::new("endpoint", "tiles_directory");
+        assert_eq!(sts.get_endpoint(), "endpoint");
+        assert_eq!(sts.get_tiles_directory(), PathBuf::from("tiles_directory"));
+        assert_eq!(sts.get_tiles_directory_string(), "tiles_directory");
+        assert!(std::path::Path::try_exists("assets/tiles_directory".as_ref()).is_ok());
+    }
+
+    #[test]
+    fn test_slippy_tile_coordinates() {
+        assert_eq!(
+            SlippyTileCoordinates::from_lat_lon_zoom(0.0045, 0.0045, ZoomLevel::L1),
+            SlippyTileCoordinates { x: 1, y: 1 }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::from_lat_lon_zoom(0.0045, 0.0045, ZoomLevel::L10),
+            SlippyTileCoordinates { x: 512, y: 512 }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::from_lat_lon_zoom(0.0045, 0.0045, ZoomLevel::L19),
+            SlippyTileCoordinates {
+                x: 262151,
+                y: 262137
+            }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::from_lat_lon_zoom(26.85, 72.58, ZoomLevel::L19),
+            SlippyTileCoordinates {
+                x: 367846,
+                y: 221526
+            }
+        );
+    }
+
+    #[test]
+    fn test_slippy_tile_download_status() {
+        let mut stds = SlippyTileDownloadStatus::default();
+        stds.insert(
+            100,
+            50,
+            ZoomLevel::L10,
+            TileSize::Normal,
+            "filename".into(),
+            DownloadStatus::Downloading,
+        );
+        assert!(!stds.contains_key(100, 50, ZoomLevel::L1, TileSize::Normal));
+        assert!(!stds.contains_key(100, 50, ZoomLevel::L10, TileSize::Large));
+        assert!(!stds.contains_key(100, 100, ZoomLevel::L10, TileSize::Normal));
+        assert!(stds.contains_key(100, 50, ZoomLevel::L10, TileSize::Normal));
+        stds.insert(
+            50,
+            100,
+            ZoomLevel::L18,
+            TileSize::Large,
+            "filename".into(),
+            DownloadStatus::Downloaded,
+        );
+        assert!(!stds.contains_key(50, 100, ZoomLevel::L1, TileSize::Large));
+        assert!(!stds.contains_key(50, 100, ZoomLevel::L18, TileSize::Normal));
+        assert!(!stds.contains_key(100, 50, ZoomLevel::L18, TileSize::Large));
+        assert!(stds.contains_key(50, 100, ZoomLevel::L18, TileSize::Large));
     }
 }
