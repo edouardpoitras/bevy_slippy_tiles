@@ -5,7 +5,7 @@ mod systems;
 use std::path::{Path, PathBuf};
 
 use bevy::{
-    prelude::{App, Component, Plugin, Resource},
+    prelude::{App, Component, Event, Plugin, Resource, Update},
     tasks::Task,
     utils::hashbrown::HashMap,
 };
@@ -289,7 +289,7 @@ pub enum DownloadStatus {
 }
 
 /// Users send these events to request slippy tile downloads.
-#[derive(Debug)]
+#[derive(Debug, Event)]
 pub struct DownloadSlippyTilesEvent {
     pub tile_size: TileSize,
     pub zoom_level: ZoomLevel,
@@ -308,7 +308,7 @@ impl DownloadSlippyTilesEvent {
 }
 
 /// The library will generate these events upon successful slippy tile downloads.
-#[derive(Debug)]
+#[derive(Debug, Event)]
 pub struct SlippyTileDownloadedEvent {
     /// The [`TileSize`] used for this downloaded slippy tile.
     pub tile_size: TileSize,
@@ -438,8 +438,8 @@ impl Plugin for SlippyTilesPlugin {
             .insert_resource(SlippyTileDownloadTasks::new())
             .add_event::<DownloadSlippyTilesEvent>()
             .add_event::<SlippyTileDownloadedEvent>()
-            .add_system(systems::download_slippy_tiles)
-            .add_system(systems::download_slippy_tiles_completed);
+            .add_systems(Update, systems::download_slippy_tiles)
+            .add_systems(Update, systems::download_slippy_tiles_completed);
     }
 }
 

@@ -37,7 +37,7 @@ fn main() {
             "tiles/",                         // assets/ folder storing the slippy tile downloads.
         ))
         .add_plugins(DefaultPlugins)
-        .add_plugin(SlippyTilesPlugin);
+        .add_plugins(SlippyTilesPlugin);
 
         // ...
 
@@ -86,5 +86,6 @@ fn display_slippy_tiles(
 
 |bevy|bevy_slippy_tiles|
 |---|---|
+|0.11|0.3|
 |0.10|0.2|
 |0.9|0.1.3|
