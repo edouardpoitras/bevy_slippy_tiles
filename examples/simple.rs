@@ -15,9 +15,9 @@ fn main() {
             "tiles/",                         // assets/ folder storing the slippy tile downloads.
         ))
         .add_plugins(DefaultPlugins)
-        .add_plugin(SlippyTilesPlugin)
-        .add_startup_systems((spawn_camera, request_slippy_tiles))
-        .add_system(display_slippy_tiles)
+        .add_plugins(SlippyTilesPlugin)
+        .add_systems(Startup, (spawn_camera, request_slippy_tiles))
+        .add_systems(Update, display_slippy_tiles)
         .run();
 }
 
