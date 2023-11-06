@@ -64,7 +64,7 @@ fn display_slippy_tiles(
     asset_server: Res<AssetServer>,
     mut slippy_tile_downloaded_events: EventReader<SlippyTileDownloadedEvent>,
 ) {
-    for slippy_tile_downloaded_event in slippy_tile_downloaded_events.iter() {
+    for slippy_tile_downloaded_event in slippy_tile_downloaded_events.read() {
         let zoom_level = slippy_tile_downloaded_event.zoom_level;
 
         // ..
@@ -86,6 +86,7 @@ fn display_slippy_tiles(
 
 |bevy|bevy_slippy_tiles|
 |---|---|
+|0.12|0.4|
 |0.11|0.3|
 |0.10|0.2|
 |0.9|0.1.3|

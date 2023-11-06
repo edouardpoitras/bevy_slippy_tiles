@@ -45,7 +45,7 @@ fn display_slippy_tiles(
     asset_server: Res<AssetServer>,
     mut slippy_tile_downloaded_events: EventReader<SlippyTileDownloadedEvent>,
 ) {
-    for slippy_tile_downloaded_event in slippy_tile_downloaded_events.iter() {
+    for slippy_tile_downloaded_event in slippy_tile_downloaded_events.read() {
         info!("Slippy tile fetched: {:?}", slippy_tile_downloaded_event);
         let zoom_level = slippy_tile_downloaded_event.zoom_level;
         // Convert our slippy tile position to pixels on the screen relative to the center tile.
