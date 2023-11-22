@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use bevy::{
     prelude::{App, Component, Event, Plugin, Resource, Update},
     tasks::Task,
-    utils::hashbrown::HashMap,
+    utils::hashbrown::HashMap, reflect::Reflect,
 };
 
 /// Type used to dictate various settings for this crate.
@@ -329,7 +329,7 @@ impl SlippyTileDownloadedEvent {
 
 /// Slippy map tile coordinates: <https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames>
 /// The x and y coordinates are used directly in the endpoint download requests.
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Component)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Component, Reflect)]
 pub struct SlippyTileCoordinates {
     pub x: u32,
     pub y: u32,

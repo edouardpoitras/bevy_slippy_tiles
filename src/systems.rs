@@ -20,7 +20,7 @@ pub fn download_slippy_tiles(
     mut slippy_tile_download_status: ResMut<SlippyTileDownloadStatus>,
     mut slippy_tile_download_tasks: ResMut<SlippyTileDownloadTasks>,
 ) {
-    for download_slippy_tile in download_slippy_tile_events.read() {
+    for download_slippy_tile in download_slippy_tile_events.iter() {
         let radius = download_slippy_tile.radius.0;
         let slippy_tile_coords = download_slippy_tile.get_slippy_tile_coordinates();
         for x in slippy_tile_coords.x - radius as u32..slippy_tile_coords.x + radius as u32 + 1 {
