@@ -10,6 +10,47 @@ use bevy::{
     utils::hashbrown::HashMap,
 };
 
+pub const EARTH_CIRCUMFERENCE: f64 = 40_075_016.686;
+pub const EARTH_RADIUS: f64 = 6_378_137_f64;
+pub const DEGREES_PER_METER: f64 = 360.0 / EARTH_CIRCUMFERENCE;
+pub const METERS_PER_DEGREE: f64 = EARTH_CIRCUMFERENCE / 360.0;
+
+// TODO: Incorporate many of the functions here:
+//       https://hackage.haskell.org/package/tile-0.3.0.0/src/src/Data/Tile.hs
+
+/// The number of meters per pixel at the equator.
+/// https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Resolution_and_Scale
+pub fn meters_per_pixel(zoom_level: ZoomLevel) -> f64 {
+    match zoom_level {
+        ZoomLevel::L0 => 156543.03,
+        ZoomLevel::L1 => 78271.52,
+        ZoomLevel::L2 => 39135.76,
+        ZoomLevel::L3 => 19567.88,
+        ZoomLevel::L4 => 9783.94,
+        ZoomLevel::L5 => 4891.97,
+        ZoomLevel::L6 => 2445.98,
+        ZoomLevel::L7 => 1222.99,
+        ZoomLevel::L8 => 611.50,
+        ZoomLevel::L9 => 305.75,
+        ZoomLevel::L10 => 152.87,
+        ZoomLevel::L11 => 76.437,
+        ZoomLevel::L12 => 38.219,
+        ZoomLevel::L13 => 19.109,
+        ZoomLevel::L14 => 9.5546,
+        ZoomLevel::L15 => 4.7773,
+        ZoomLevel::L16 => 2.3887,
+        ZoomLevel::L17 => 1.1943,
+        ZoomLevel::L18 => 0.5972,
+        ZoomLevel::L19 => 0.2986,
+        ZoomLevel::L20 => 0.1493,
+        ZoomLevel::L21 => 0.0747,
+        ZoomLevel::L22 => 0.0374,
+        ZoomLevel::L23 => 0.0187,
+        ZoomLevel::L24 => 0.0094,
+        ZoomLevel::L25 => 0.0047,
+    }
+}
+
 /// Type used to dictate various settings for this crate.
 ///
 /// `endpoint` - Tile server endpoint (example: <https://tile.openstreetmap.org>).
@@ -82,6 +123,12 @@ pub enum ZoomLevel {
     L17,
     L18,
     L19,
+    L20,
+    L21,
+    L22,
+    L23,
+    L24,
+    L25,
 }
 
 impl ZoomLevel {
@@ -107,6 +154,12 @@ impl ZoomLevel {
             ZoomLevel::L17 => 17,
             ZoomLevel::L18 => 18,
             ZoomLevel::L19 => 19,
+            ZoomLevel::L20 => 20,
+            ZoomLevel::L21 => 21,
+            ZoomLevel::L22 => 22,
+            ZoomLevel::L23 => 23,
+            ZoomLevel::L24 => 24,
+            ZoomLevel::L25 => 25,
         }
     }
 }
@@ -337,13 +390,24 @@ pub struct SlippyTileCoordinates {
 
 impl SlippyTileCoordinates {
     /// Get slippy tile coordinates based on a real-world lat/lon and zoom level.
-    pub fn from_lat_lon_zoom(lat: f64, lon: f64, zoom_level: ZoomLevel) -> SlippyTileCoordinates {
-        let lat_rad = lat.to_radians();
-        let num_tiles = f64::powf(2.0, zoom_level.to_u8() as f64);
-        let x = ((lon + 180.0_f64) / 360.0_f64 * num_tiles).round() as u32;
-        let y = ((1.0_f64 - (lat_rad.tan()).asinh() / std::f64::consts::PI) / 2.0_f64 * num_tiles)
-            .round() as u32;
+    pub fn from_latitude_longitude(
+        lat: f64,
+        lon: f64,
+        zoom_level: ZoomLevel,
+    ) -> SlippyTileCoordinates {
+        let x = longitude_to_tile_x(lon, zoom_level.to_u8());
+        let y = latitude_to_tile_y(lat, zoom_level.to_u8());
         SlippyTileCoordinates { x, y }
+    }
+
+    /// Get real-world lat/lon based on slippy tile coordinates.
+    pub fn to_latitude_longitude(&self, zoom_level: ZoomLevel) -> LatitudeLongitudeCoordinates {
+        let lon = tile_x_to_longitude(self.x, zoom_level.to_u8());
+        let lat = tile_y_to_latitude(self.y, zoom_level.to_u8());
+        LatitudeLongitudeCoordinates {
+            latitude: lat,
+            longitude: lon,
+        }
     }
 }
 
@@ -358,7 +422,7 @@ pub struct LatitudeLongitudeCoordinates {
 impl LatitudeLongitudeCoordinates {
     /// Get slippy tile coordinates based on a real-world lat/lon and zoom level.
     pub fn to_slippy_tile_coordinates(&self, zoom_level: ZoomLevel) -> SlippyTileCoordinates {
-        SlippyTileCoordinates::from_lat_lon_zoom(self.latitude, self.longitude, zoom_level)
+        SlippyTileCoordinates::from_latitude_longitude(self.latitude, self.longitude, zoom_level)
     }
 }
 
@@ -430,6 +494,86 @@ impl FileExists {
     }
 }
 
+// https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations
+pub fn latitude_to_tile_y(lat: f64, zoom: u8) -> u32 {
+    ((1.0
+        - ((lat * std::f64::consts::PI / 180.0).tan()
+            + 1.0 / (lat * std::f64::consts::PI / 180.0).cos())
+        .ln()
+            / std::f64::consts::PI)
+        / 2.0
+        * f64::powf(2.0, zoom as f64))
+    .floor() as u32
+}
+
+// https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations
+pub fn longitude_to_tile_x(lon: f64, zoom: u8) -> u32 {
+    ((lon + 180.0) / 360.0 * f64::powf(2.0, zoom as f64)).floor() as u32
+}
+
+// https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations
+pub fn tile_y_to_latitude(y: u32, zoom: u8) -> f64 {
+    let n =
+        std::f64::consts::PI - 2.0 * std::f64::consts::PI * y as f64 / f64::powf(2.0, zoom as f64);
+    let intermediate: f64 = 0.5 * (n.exp() - (-n).exp());
+    180.0 / std::f64::consts::PI * intermediate.atan()
+}
+
+// https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations
+pub fn tile_x_to_longitude(x: u32, z: u8) -> f64 {
+    x as f64 / f64::powf(2.0, z as f64) * 360.0 - 180.0
+}
+
+// Get the numbers of tiles in a given dimension, x or y, at the specified map zoom level.
+pub fn max_tiles_in_dimension(zoom_level: ZoomLevel) -> usize {
+    (1 << zoom_level.to_u8()) as usize
+}
+
+// Get the number of pixels in a given dimension, x or y.
+pub fn max_pixels_in_dimension(zoom_level: ZoomLevel, tile_size: TileSize) -> usize {
+    tile_size.to_pixels() as usize * max_tiles_in_dimension(zoom_level)
+}
+
+// Given a x and y pixel position in the world (0,0 at the bottom left), return the world coordinates.
+pub fn world_pixel_to_world_coords(
+    x_pixel: usize,
+    y_pixel: usize,
+    tile_size: TileSize,
+    zoom_level: ZoomLevel,
+) -> LatitudeLongitudeCoordinates {
+    // Flip Y axis because Bevy has (0,0) at the bottom left, but the calculation is for (0,0) at the top left.
+    // TODO: Cache this max pixels value?
+    let max_pixels = max_pixels_in_dimension(zoom_level, tile_size);
+    let y_pixel = max_pixels - y_pixel;
+    let (longitude, latitude) =
+        googleprojection::Mercator::with_size(tile_size.to_pixels() as usize)
+            .from_pixel_to_ll(&(x_pixel as f64, y_pixel as f64), zoom_level.to_u8().into())
+            .unwrap_or_default();
+    LatitudeLongitudeCoordinates {
+        latitude,
+        longitude,
+    }
+}
+
+// Given world coordinates, return the x and y pixel position in the world.
+pub fn world_coords_to_world_pixel(
+    coords: &LatitudeLongitudeCoordinates,
+    tile_size: TileSize,
+    zoom_level: ZoomLevel,
+) -> (usize, usize) {
+    let (x, y) = googleprojection::Mercator::with_size(tile_size.to_pixels() as usize)
+        .from_ll_to_subpixel(
+            &(coords.longitude, coords.latitude),
+            zoom_level.to_u8().into(),
+        )
+        .unwrap_or_default();
+    // Flip Y axis because Bevy has (0,0) at the bottom left, but the calculation is for (0,0) at the top left.
+    // TODO: Cache this max pixels value?
+    let max_pixels = max_pixels_in_dimension(zoom_level, tile_size);
+    let y = max_pixels - y as usize;
+    (x as usize, y as usize)
+}
+
 pub struct SlippyTilesPlugin;
 
 impl Plugin for SlippyTilesPlugin {
@@ -466,25 +610,97 @@ mod tests {
     #[test]
     fn test_slippy_tile_coordinates() {
         assert_eq!(
-            SlippyTileCoordinates::from_lat_lon_zoom(0.0045, 0.0045, ZoomLevel::L1),
-            SlippyTileCoordinates { x: 1, y: 1 }
+            SlippyTileCoordinates::from_latitude_longitude(85.0511287798066, 0.0, ZoomLevel::L1),
+            SlippyTileCoordinates { x: 1, y: 0 }
         );
         assert_eq!(
-            SlippyTileCoordinates::from_lat_lon_zoom(0.0045, 0.0045, ZoomLevel::L10),
+            SlippyTileCoordinates::to_latitude_longitude(
+                &SlippyTileCoordinates { x: 1, y: 0 },
+                ZoomLevel::L1
+            ),
+            LatitudeLongitudeCoordinates {
+                latitude: 85.0511287798066,
+                longitude: 0.0
+            }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::from_latitude_longitude(0.0, 0.0, ZoomLevel::L10),
             SlippyTileCoordinates { x: 512, y: 512 }
         );
         assert_eq!(
-            SlippyTileCoordinates::from_lat_lon_zoom(0.0045, 0.0045, ZoomLevel::L19),
+            SlippyTileCoordinates::to_latitude_longitude(
+                &SlippyTileCoordinates { x: 512, y: 512 },
+                ZoomLevel::L10
+            ),
+            LatitudeLongitudeCoordinates {
+                latitude: 0.0,
+                longitude: 0.0
+            }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::from_latitude_longitude(
+                48.81590713080016,
+                2.2686767578125,
+                ZoomLevel::L17
+            ),
+            SlippyTileCoordinates { x: 66362, y: 45115 }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::to_latitude_longitude(
+                &SlippyTileCoordinates { x: 66362, y: 45115 },
+                ZoomLevel::L17
+            ),
+            LatitudeLongitudeCoordinates {
+                latitude: 48.81590713080016,
+                longitude: 2.2686767578125
+            }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::from_latitude_longitude(
+                0.004806518549043551,
+                0.004119873046875,
+                ZoomLevel::L19
+            ),
             SlippyTileCoordinates {
-                x: 262151,
+                x: 262150,
                 y: 262137
             }
         );
         assert_eq!(
-            SlippyTileCoordinates::from_lat_lon_zoom(26.85, 72.58, ZoomLevel::L19),
+            SlippyTileCoordinates::to_latitude_longitude(
+                &SlippyTileCoordinates {
+                    x: 262150,
+                    y: 262137
+                },
+                ZoomLevel::L19
+            ),
+            LatitudeLongitudeCoordinates {
+                latitude: 0.004806518549043551,
+                longitude: 0.004119873046875
+            }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::from_latitude_longitude(
+                26.850416392948524,
+                72.57980346679688,
+                ZoomLevel::L19
+            ),
             SlippyTileCoordinates {
                 x: 367846,
-                y: 221526
+                y: 221525
+            }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::to_latitude_longitude(
+                &SlippyTileCoordinates {
+                    x: 367846,
+                    y: 221525
+                },
+                ZoomLevel::L19
+            ),
+            LatitudeLongitudeCoordinates {
+                latitude: 26.850416392948524,
+                longitude: 72.57980346679688
             }
         );
     }
@@ -516,5 +732,43 @@ mod tests {
         assert!(!stds.contains_key(50, 100, ZoomLevel::L18, TileSize::Normal));
         assert!(!stds.contains_key(100, 50, ZoomLevel::L18, TileSize::Large));
         assert!(stds.contains_key(50, 100, ZoomLevel::L18, TileSize::Large));
+    }
+
+    #[test]
+    fn test_pixel_to_world_coords() {
+        let tile_size = TileSize::Normal;
+        let zoom_level = ZoomLevel::L18;
+        // Bevy start (0,0) at the bottom left, so this is close to the bottom left on a map rendered in bevy.
+        let world_coords = world_pixel_to_world_coords(42_125, 101_662, tile_size, zoom_level);
+        let rounded = LatitudeLongitudeCoordinates {
+            latitude: format!("{:.5}", world_coords.latitude).parse().unwrap(),
+            longitude: format!("{:.5}", world_coords.longitude).parse().unwrap(),
+        };
+        // We expect world coordinates roughly in the bottom left on a world map.
+        let check = LatitudeLongitudeCoordinates {
+            latitude: -85.00386,
+            longitude: -179.77402,
+        };
+        assert_eq!(rounded, check);
+        let pixel = world_coords_to_world_pixel(&world_coords, tile_size, zoom_level);
+        assert_eq!(pixel, (42_125, 101_662));
+    }
+
+    #[test]
+    fn test_world_coords_to_pixel() {
+        let world_coords = LatitudeLongitudeCoordinates {
+            latitude: 45.41098,
+            longitude: -75.69854,
+        };
+        let tile_size = TileSize::Normal;
+        let zoom_level = ZoomLevel::L18;
+        let pixel = world_coords_to_world_pixel(&world_coords, tile_size, zoom_level);
+        assert_eq!((pixel.0 as u32, pixel.1 as u32), (19_443_201, 43_076_863));
+        let world_coords2 = world_pixel_to_world_coords(pixel.0, pixel.1, tile_size, zoom_level);
+        let rounded = LatitudeLongitudeCoordinates {
+            latitude: format!("{:.5}", world_coords2.latitude).parse().unwrap(),
+            longitude: format!("{:.5}", world_coords2.longitude).parse().unwrap(),
+        };
+        assert_eq!(world_coords, rounded);
     }
 }

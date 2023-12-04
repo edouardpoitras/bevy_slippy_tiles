@@ -49,7 +49,13 @@ fn handle_download_slippy_tile_event(
 ) {
     let spc = SlippyTileCoordinates { x, y };
     let tiles_directory = slippy_tiles_settings.get_tiles_directory_string();
-    let filename = get_tile_filename(tiles_directory, download_slippy_tile_event.zoom_level, x, y);
+    let filename = get_tile_filename(
+        tiles_directory,
+        download_slippy_tile_event.zoom_level,
+        x,
+        y,
+        download_slippy_tile_event.tile_size,
+    );
     let already_downloaded = slippy_tile_download_status.contains_key_with_coords(
         spc,
         download_slippy_tile_event.zoom_level,
@@ -92,13 +98,20 @@ fn handle_download_slippy_tile_event(
     }
 }
 
-fn get_tile_filename(tiles_directory: String, zoom_level: ZoomLevel, x: u32, y: u32) -> String {
+fn get_tile_filename(
+    tiles_directory: String,
+    zoom_level: ZoomLevel,
+    x: u32,
+    y: u32,
+    tile_size: TileSize,
+) -> String {
     format!(
-        "{}{}.{}.{}.tile.png",
+        "{}{}.{}.{}.{}.tile.png",
         tiles_directory,
         zoom_level.to_u8(),
         x,
-        y
+        y,
+        tile_size.to_pixels()
     )
 }
 
