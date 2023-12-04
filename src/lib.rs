@@ -6,8 +6,9 @@ use std::path::{Path, PathBuf};
 
 use bevy::{
     prelude::{App, Component, Event, Plugin, Resource, Update},
+    reflect::Reflect,
     tasks::Task,
-    utils::hashbrown::HashMap, reflect::Reflect,
+    utils::hashbrown::HashMap,
 };
 
 /// Type used to dictate various settings for this crate.
@@ -337,13 +338,24 @@ pub struct SlippyTileCoordinates {
 
 impl SlippyTileCoordinates {
     /// Get slippy tile coordinates based on a real-world lat/lon and zoom level.
-    pub fn from_lat_lon_zoom(lat: f64, lon: f64, zoom_level: ZoomLevel) -> SlippyTileCoordinates {
-        let lat_rad = lat.to_radians();
-        let num_tiles = f64::powf(2.0, zoom_level.to_u8() as f64);
-        let x = ((lon + 180.0_f64) / 360.0_f64 * num_tiles).round() as u32;
-        let y = ((1.0_f64 - (lat_rad.tan()).asinh() / std::f64::consts::PI) / 2.0_f64 * num_tiles)
-            .round() as u32;
+    pub fn from_latitude_longitude(
+        lat: f64,
+        lon: f64,
+        zoom_level: ZoomLevel,
+    ) -> SlippyTileCoordinates {
+        let x = longitude_to_tile_x(lon, zoom_level.to_u8());
+        let y = latitude_to_tile_y(lat, zoom_level.to_u8());
         SlippyTileCoordinates { x, y }
+    }
+
+    /// Get real-world lat/lon based on slippy tile coordinates.
+    pub fn to_latitude_longitude(&self, zoom_level: ZoomLevel) -> LatitudeLongitudeCoordinates {
+        let lon = tile_x_to_longitude(self.x, zoom_level.to_u8());
+        let lat = tile_y_to_latitude(self.y, zoom_level.to_u8());
+        LatitudeLongitudeCoordinates {
+            latitude: lat,
+            longitude: lon,
+        }
     }
 }
 
@@ -358,7 +370,7 @@ pub struct LatitudeLongitudeCoordinates {
 impl LatitudeLongitudeCoordinates {
     /// Get slippy tile coordinates based on a real-world lat/lon and zoom level.
     pub fn to_slippy_tile_coordinates(&self, zoom_level: ZoomLevel) -> SlippyTileCoordinates {
-        SlippyTileCoordinates::from_lat_lon_zoom(self.latitude, self.longitude, zoom_level)
+        SlippyTileCoordinates::from_latitude_longitude(self.latitude, self.longitude, zoom_level)
     }
 }
 
@@ -430,6 +442,36 @@ impl FileExists {
     }
 }
 
+// https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations
+pub fn latitude_to_tile_y(lat: f64, zoom: u8) -> u32 {
+    ((1.0
+        - ((lat * std::f64::consts::PI / 180.0).tan()
+            + 1.0 / (lat * std::f64::consts::PI / 180.0).cos())
+        .ln()
+            / std::f64::consts::PI)
+        / 2.0
+        * f64::powf(2.0, zoom as f64))
+    .floor() as u32
+}
+
+// https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations
+pub fn longitude_to_tile_x(lon: f64, zoom: u8) -> u32 {
+    ((lon + 180.0) / 360.0 * f64::powf(2.0, zoom as f64)).floor() as u32
+}
+
+// https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations
+pub fn tile_y_to_latitude(y: u32, zoom: u8) -> f64 {
+    let n =
+        std::f64::consts::PI - 2.0 * std::f64::consts::PI * y as f64 / f64::powf(2.0, zoom as f64);
+    let intermediate: f64 = 0.5 * (n.exp() - (-n).exp());
+    180.0 / std::f64::consts::PI * intermediate.atan()
+}
+
+// https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations
+pub fn tile_x_to_longitude(x: u32, z: u8) -> f64 {
+    x as f64 / f64::powf(2.0, z as f64) * 360.0 - 180.0
+}
+
 pub struct SlippyTilesPlugin;
 
 impl Plugin for SlippyTilesPlugin {
@@ -466,25 +508,97 @@ mod tests {
     #[test]
     fn test_slippy_tile_coordinates() {
         assert_eq!(
-            SlippyTileCoordinates::from_lat_lon_zoom(0.0045, 0.0045, ZoomLevel::L1),
-            SlippyTileCoordinates { x: 1, y: 1 }
+            SlippyTileCoordinates::from_latitude_longitude(85.0511287798066, 0.0, ZoomLevel::L1),
+            SlippyTileCoordinates { x: 1, y: 0 }
         );
         assert_eq!(
-            SlippyTileCoordinates::from_lat_lon_zoom(0.0045, 0.0045, ZoomLevel::L10),
+            SlippyTileCoordinates::to_latitude_longitude(
+                &SlippyTileCoordinates { x: 1, y: 0 },
+                ZoomLevel::L1
+            ),
+            LatitudeLongitudeCoordinates {
+                latitude: 85.0511287798066,
+                longitude: 0.0
+            }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::from_latitude_longitude(0.0, 0.0, ZoomLevel::L10),
             SlippyTileCoordinates { x: 512, y: 512 }
         );
         assert_eq!(
-            SlippyTileCoordinates::from_lat_lon_zoom(0.0045, 0.0045, ZoomLevel::L19),
+            SlippyTileCoordinates::to_latitude_longitude(
+                &SlippyTileCoordinates { x: 512, y: 512 },
+                ZoomLevel::L10
+            ),
+            LatitudeLongitudeCoordinates {
+                latitude: 0.0,
+                longitude: 0.0
+            }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::from_latitude_longitude(
+                48.81590713080016,
+                2.2686767578125,
+                ZoomLevel::L17
+            ),
+            SlippyTileCoordinates { x: 66362, y: 45115 }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::to_latitude_longitude(
+                &SlippyTileCoordinates { x: 66362, y: 45115 },
+                ZoomLevel::L17
+            ),
+            LatitudeLongitudeCoordinates {
+                latitude: 48.81590713080016,
+                longitude: 2.2686767578125
+            }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::from_latitude_longitude(
+                0.004806518549043551,
+                0.004119873046875,
+                ZoomLevel::L19
+            ),
             SlippyTileCoordinates {
-                x: 262151,
+                x: 262150,
                 y: 262137
             }
         );
         assert_eq!(
-            SlippyTileCoordinates::from_lat_lon_zoom(26.85, 72.58, ZoomLevel::L19),
+            SlippyTileCoordinates::to_latitude_longitude(
+                &SlippyTileCoordinates {
+                    x: 262150,
+                    y: 262137
+                },
+                ZoomLevel::L19
+            ),
+            LatitudeLongitudeCoordinates {
+                latitude: 0.004806518549043551,
+                longitude: 0.004119873046875
+            }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::from_latitude_longitude(
+                26.850416392948524,
+                72.57980346679688,
+                ZoomLevel::L19
+            ),
             SlippyTileCoordinates {
                 x: 367846,
-                y: 221526
+                y: 221525
+            }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::to_latitude_longitude(
+                &SlippyTileCoordinates {
+                    x: 367846,
+                    y: 221525
+                },
+                ZoomLevel::L19
+            ),
+            LatitudeLongitudeCoordinates {
+                latitude: 26.850416392948524,
+                longitude: 72.57980346679688
             }
         );
     }

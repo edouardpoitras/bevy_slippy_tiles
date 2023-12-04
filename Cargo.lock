@@ -830,7 +830,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_slippy_tiles"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "bevy",
  "futures-lite",
