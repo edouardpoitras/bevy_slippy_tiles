@@ -830,10 +830,11 @@ dependencies = [
 
 [[package]]
 name = "bevy_slippy_tiles"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "bevy",
  "futures-lite",
+ "googleprojection",
  "reqwest",
 ]
 
@@ -1779,6 +1780,12 @@ dependencies = [
  "approx",
  "xi-unicode",
 ]
+
+[[package]]
+name = "googleprojection"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4d16a9abb42cccc0d7ba93ff0c93989efc5c03e07df4910960a80d46fbdb223"
 
 [[package]]
 name = "gpu-alloc"
