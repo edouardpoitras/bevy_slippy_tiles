@@ -9,6 +9,7 @@ repository = "https://github.com/edouardpoitras/bevy_slippy_tiles"
 [dependencies]
 bevy = "0.11"
 futures-lite = "1.13"
+googleprojection = "1.2"
 reqwest = { version = "0.11", features = ["blocking"] }
 
 [[example]]
