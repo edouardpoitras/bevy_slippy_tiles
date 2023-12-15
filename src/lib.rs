@@ -526,19 +526,19 @@ pub fn tile_x_to_longitude(x: u32, z: u8) -> f64 {
 }
 
 // Get the numbers of tiles in a given dimension, x or y, at the specified map zoom level.
-pub fn max_tiles_in_dimension(zoom_level: ZoomLevel) -> usize {
-    (1 << zoom_level.to_u8()) as usize
+pub fn max_tiles_in_dimension(zoom_level: ZoomLevel) -> f64 {
+    (1 << zoom_level.to_u8()) as f64
 }
 
 // Get the number of pixels in a given dimension, x or y.
-pub fn max_pixels_in_dimension(zoom_level: ZoomLevel, tile_size: TileSize) -> usize {
-    tile_size.to_pixels() as usize * max_tiles_in_dimension(zoom_level)
+pub fn max_pixels_in_dimension(zoom_level: ZoomLevel, tile_size: TileSize) -> f64 {
+    tile_size.to_pixels() as f64 * max_tiles_in_dimension(zoom_level)
 }
 
 // Given a x and y pixel position in the world (0,0 at the bottom left), return the world coordinates.
 pub fn world_pixel_to_world_coords(
-    x_pixel: usize,
-    y_pixel: usize,
+    x_pixel: f64,
+    y_pixel: f64,
     tile_size: TileSize,
     zoom_level: ZoomLevel,
 ) -> LatitudeLongitudeCoordinates {
@@ -548,7 +548,7 @@ pub fn world_pixel_to_world_coords(
     let y_pixel = max_pixels - y_pixel;
     let (longitude, latitude) =
         googleprojection::Mercator::with_size(tile_size.to_pixels() as usize)
-            .from_pixel_to_ll(&(x_pixel as f64, y_pixel as f64), zoom_level.to_u8().into())
+            .from_pixel_to_ll(&(x_pixel, y_pixel), zoom_level.to_u8().into())
             .unwrap_or_default();
     LatitudeLongitudeCoordinates {
         latitude,
@@ -561,7 +561,7 @@ pub fn world_coords_to_world_pixel(
     coords: &LatitudeLongitudeCoordinates,
     tile_size: TileSize,
     zoom_level: ZoomLevel,
-) -> (usize, usize) {
+) -> (f64, f64) {
     let (x, y) = googleprojection::Mercator::with_size(tile_size.to_pixels() as usize)
         .from_ll_to_subpixel(
             &(coords.longitude, coords.latitude),
@@ -571,8 +571,8 @@ pub fn world_coords_to_world_pixel(
     // Flip Y axis because Bevy has (0,0) at the bottom left, but the calculation is for (0,0) at the top left.
     // TODO: Cache this max pixels value?
     let max_pixels = max_pixels_in_dimension(zoom_level, tile_size);
-    let y = max_pixels - y as usize;
-    (x as usize, y as usize)
+    let y = max_pixels - y;
+    (x, y)
 }
 
 pub struct SlippyTilesPlugin;
@@ -740,7 +740,7 @@ mod tests {
         let tile_size = TileSize::Normal;
         let zoom_level = ZoomLevel::L18;
         // Bevy start (0,0) at the bottom left, so this is close to the bottom left on a map rendered in bevy.
-        let world_coords = world_pixel_to_world_coords(42_125, 101_662, tile_size, zoom_level);
+        let world_coords = world_pixel_to_world_coords(42_125.0, 101_661.0, tile_size, zoom_level);
         let rounded = LatitudeLongitudeCoordinates {
             latitude: format!("{:.5}", world_coords.latitude).parse().unwrap(),
             longitude: format!("{:.5}", world_coords.longitude).parse().unwrap(),
@@ -752,7 +752,8 @@ mod tests {
         };
         assert_eq!(rounded, check);
         let pixel = world_coords_to_world_pixel(&world_coords, tile_size, zoom_level);
-        assert_eq!(pixel, (42_125, 101_662));
+        let rounded = (pixel.0.round(), pixel.1.round());
+        assert_eq!(rounded, (42_125.0, 101_661.0));
     }
 
     #[test]
@@ -764,7 +765,7 @@ mod tests {
         let tile_size = TileSize::Normal;
         let zoom_level = ZoomLevel::L18;
         let pixel = world_coords_to_world_pixel(&world_coords, tile_size, zoom_level);
-        assert_eq!((pixel.0 as u32, pixel.1 as u32), (19_443_201, 43_076_863));
+        assert_eq!((pixel.0 as u32, pixel.1 as u32), (19_443_201, 43_076_862));
         let world_coords2 = world_pixel_to_world_coords(pixel.0, pixel.1, tile_size, zoom_level);
         let rounded = LatitudeLongitudeCoordinates {
             latitude: format!("{:.5}", world_coords2.latitude).parse().unwrap(),
