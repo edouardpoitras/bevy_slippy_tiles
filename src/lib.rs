@@ -571,7 +571,7 @@ pub fn world_coords_to_world_pixel(
     // TODO: Cache this max pixels value?
     let max_pixels = max_pixels_in_dimension(zoom_level, tile_size);
     let y = max_pixels - y as usize;
-    (x as usize, y as usize)
+    (x as usize, y)
 }
 
 pub struct SlippyTilesPlugin;
