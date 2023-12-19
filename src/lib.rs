@@ -58,10 +58,6 @@ pub fn meters_per_pixel(zoom_level: ZoomLevel) -> f64 {
 /// TODO: Choose a few as backup and abide by usage policy - <https://wiki.openstreetmap.org/wiki/Tile_servers>
 ///
 /// `tiles_directory` - The folder that all tiles will be stored in.
-///
-/// `tile_size` - [TileSize::Normal] (256px) or [TileSize::Large] (512px). Large is not supported for many tile servers.
-///
-/// `zoom_level` - The slippy tile zoom level. Can be between [ZoomLevel::L0] to [ZoomLevel::L19].
 #[derive(Clone, Resource)]
 pub struct SlippyTilesSettings {
     endpoint: String,
@@ -165,18 +161,20 @@ impl ZoomLevel {
     }
 }
 
-/// The size of the tiles being requested - either 256px (Normal), or 512px (Large).
-/// Not every tile provider supports Large.
+/// The size of the tiles being requested - either 256px (Normal), 512px (Large), or 768px (VeryLarge).
+/// Not every tile provider supports Large and VeryLarge.
 #[derive(Eq, Hash, PartialEq, Clone, Copy, Debug)]
 pub enum TileSize {
     Normal,
     Large,
+    VeryLarge,
 }
 
 impl TileSize {
     /// Create a new TileSize type given a pixel count (512px = TileSize::Large, every other value is TileSize::Normal).
     pub fn new(tile_pixels: u32) -> TileSize {
         match tile_pixels {
+            768 => TileSize::VeryLarge,
             512 => TileSize::Large,
             _ => TileSize::Normal,
         }
@@ -187,6 +185,15 @@ impl TileSize {
         match self {
             TileSize::Normal => 256,
             TileSize::Large => 512,
+            TileSize::VeryLarge => 768,
+        }
+    }
+
+    pub fn get_url_postfix(&self) -> String {
+        match self {
+            TileSize::Normal => "".into(),
+            TileSize::Large => "@2x".into(),
+            TileSize::VeryLarge => "@3x".into(),
         }
     }
 }
