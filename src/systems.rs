@@ -157,14 +157,14 @@ fn get_tile_url(
     x: u32,
     y: u32,
 ) -> String {
-    match tile_size {
-        TileSize::Normal => {
-            format!("{}/{}/{}/{}.png", endpoint, zoom_level.to_u8(), x, y)
-        },
-        TileSize::Large => {
-            format!("{}/{}/{}/{}@2.png", endpoint, zoom_level.to_u8(), x, y)
-        },
-    }
+    format!(
+        "{}/{}/{}/{}{}.png",
+        endpoint,
+        zoom_level.to_u8(),
+        x,
+        y,
+        tile_size.get_url_postfix()
+    )
 }
 
 fn spawn_slippy_tile_download_task(
