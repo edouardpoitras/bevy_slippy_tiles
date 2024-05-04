@@ -1,9 +1,8 @@
 use bevy::{
     ecs::event::EventReader,
     prelude::{debug, EventWriter, Res, ResMut},
-    tasks::{IoTaskPool, Task},
+    tasks::{futures_lite::future, IoTaskPool, Task},
 };
-use futures_lite::future;
 use std::path::Path;
 
 use crate::{
