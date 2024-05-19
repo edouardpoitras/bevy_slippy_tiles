@@ -172,17 +172,16 @@ fn spawn_slippy_tile_download_task(
 ) -> Task<SlippyTileDownloadTaskResult> {
     let thread_pool = IoTaskPool::get();
     thread_pool.spawn(async move {
-        let client = reqwest::blocking::Client::new();
-        let response = client
-            .get(tile_url)
-            .header(reqwest::header::USER_AGENT, "bevy_slippy_tiles")
-            .send()
+        let request = ehttp::Request {
+            method: "GET".to_owned(),
+            url: tile_url,
+            body: vec![],
+            headers: ehttp::Headers::new(&[("User-Agent", "bevy_slippy_tiles")]),
+        };
+        let response = ehttp::fetch_async(request)
+            .await
             .expect("Failed to fetch tile image");
-        let mut content = std::io::Cursor::new(
-            response
-                .bytes()
-                .expect("Could not get tile image from bytes"),
-        );
+        let mut content = std::io::Cursor::new(response.bytes);
         let mut file_out = std::fs::File::create(format!("assets/{filename}")).unwrap();
         std::io::copy(&mut content, &mut file_out).unwrap();
         SlippyTileDownloadTaskResult {

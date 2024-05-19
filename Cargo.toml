@@ -8,8 +8,8 @@ repository = "https://github.com/edouardpoitras/bevy_slippy_tiles"
 
 [dependencies]
 bevy = "0.13"
+ehttp = { version = "0.5", features = ["native-async"] }
 googleprojection = "1.2"
-reqwest = { version = "0.12", features = ["blocking"] }
 
 [[example]]
 name = "simple"
