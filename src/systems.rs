@@ -1,5 +1,8 @@
 use bevy::{
-    asset::{io::AssetSourceId, AssetServer, AsyncWriteExt as _},
+    asset::{
+        io::{AssetReaderError, AssetSourceId},
+        AssetServer, AsyncWriteExt as _,
+    },
     ecs::event::EventReader,
     prelude::{debug, EventWriter, Res, ResMut},
     tasks::{futures_lite::future, IoTaskPool, Task},
@@ -64,7 +67,7 @@ fn handle_download_slippy_tile_event(
         download_slippy_tile_event.zoom_level,
         download_slippy_tile_event.tile_size,
     );
-    let file_exists = std::path::Path::new(&format!("assets/{filename}")).exists();
+    let file_exists = future::block_on(does_file_exist(asset_server, &filename));
     match (
         UseCache::new(download_slippy_tile_event.use_cache),
         AlreadyDownloaded::new(already_downloaded),
@@ -117,6 +120,16 @@ fn get_tile_filename(
         y,
         tile_size.to_pixels()
     )
+}
+
+async fn does_file_exist(asset_server: &AssetServer, filename: &str) -> bool {
+    let asset_source = asset_server.get_source(AssetSourceId::Default).unwrap();
+    let asset_reader = asset_source.reader();
+    match asset_reader.read(Path::new(filename)).await {
+        Ok(_) => true,
+        Err(AssetReaderError::NotFound(_)) => false,
+        Err(err) => panic!("failed to check if the file {} exists: {:?}", filename, err),
+    }
 }
 
 fn download_and_track_slippy_tile(
