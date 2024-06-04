@@ -1,4 +1,8 @@
 use bevy::{
+    asset::{
+        io::{AssetReaderError, AssetSourceId},
+        AssetServer, AsyncWriteExt as _,
+    },
     ecs::event::EventReader,
     prelude::{debug, EventWriter, Res, ResMut},
     tasks::{futures_lite::future, IoTaskPool, Task},
@@ -18,6 +22,7 @@ pub fn download_slippy_tiles(
     slippy_tiles_settings: Res<SlippyTilesSettings>,
     mut slippy_tile_download_status: ResMut<SlippyTileDownloadStatus>,
     mut slippy_tile_download_tasks: ResMut<SlippyTileDownloadTasks>,
+    asset_server: Res<AssetServer>,
 ) {
     for download_slippy_tile in download_slippy_tile_events.read() {
         let radius = download_slippy_tile.radius.0;
@@ -32,6 +37,7 @@ pub fn download_slippy_tiles(
                     &slippy_tiles_settings,
                     &mut slippy_tile_download_tasks,
                     &mut slippy_tile_download_status,
+                    &asset_server,
                 );
             }
         }
@@ -45,6 +51,7 @@ fn handle_download_slippy_tile_event(
     slippy_tiles_settings: &Res<SlippyTilesSettings>,
     slippy_tile_download_tasks: &mut ResMut<SlippyTileDownloadTasks>,
     slippy_tile_download_status: &mut ResMut<SlippyTileDownloadStatus>,
+    asset_server: &AssetServer,
 ) {
     let spc = SlippyTileCoordinates { x, y };
     let tiles_directory = slippy_tiles_settings.get_tiles_directory_string();
@@ -60,7 +67,7 @@ fn handle_download_slippy_tile_event(
         download_slippy_tile_event.zoom_level,
         download_slippy_tile_event.tile_size,
     );
-    let file_exists = std::path::Path::new(&format!("assets/{filename}")).exists();
+    let file_exists = future::block_on(does_file_exist(asset_server, &filename));
     match (
         UseCache::new(download_slippy_tile_event.use_cache),
         AlreadyDownloaded::new(already_downloaded),
@@ -83,6 +90,7 @@ fn handle_download_slippy_tile_event(
                 filename,
                 slippy_tile_download_tasks,
                 slippy_tile_download_status,
+                asset_server,
             );
         },
         // Cache can be used and we have the file on disk.
@@ -114,6 +122,17 @@ fn get_tile_filename(
     )
 }
 
+async fn does_file_exist(asset_server: &AssetServer, filename: &str) -> bool {
+    let asset_source = asset_server.get_source(AssetSourceId::Default).unwrap();
+    let asset_reader = asset_source.reader();
+    match asset_reader.read(Path::new(filename)).await {
+        Ok(_) => true,
+        Err(AssetReaderError::NotFound(_)) => false,
+        Err(err) => panic!("failed to check if the file {} exists: {:?}", filename, err),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 fn download_and_track_slippy_tile(
     spc: SlippyTileCoordinates,
     zoom_level: ZoomLevel,
@@ -122,8 +141,16 @@ fn download_and_track_slippy_tile(
     filename: String,
     slippy_tile_download_tasks: &mut ResMut<SlippyTileDownloadTasks>,
     slippy_tile_download_status: &mut ResMut<SlippyTileDownloadStatus>,
+    asset_server: &AssetServer,
 ) {
-    let task = download_slippy_tile(spc, zoom_level, tile_size, endpoint, filename.clone());
+    let task = download_slippy_tile(
+        spc,
+        zoom_level,
+        tile_size,
+        endpoint,
+        filename.clone(),
+        asset_server,
+    );
     slippy_tile_download_tasks.insert(spc.x, spc.y, zoom_level, tile_size, task);
     slippy_tile_download_status.insert_with_coords(
         spc,
@@ -140,13 +167,14 @@ fn download_slippy_tile(
     tile_size: TileSize,
     endpoint: String,
     filename: String,
+    asset_server: &AssetServer,
 ) -> Task<SlippyTileDownloadTaskResult> {
     debug!(
         "Fetching map tile at position {:?} with zoom level {:?} from {:?}",
         spc, zoom_level, endpoint
     );
     let tile_url = get_tile_url(endpoint, tile_size, zoom_level, spc.x, spc.y);
-    spawn_slippy_tile_download_task(tile_url, filename)
+    spawn_slippy_tile_download_task(tile_url, filename, asset_server)
 }
 
 fn get_tile_url(
@@ -169,8 +197,10 @@ fn get_tile_url(
 fn spawn_slippy_tile_download_task(
     tile_url: String,
     filename: String,
+    asset_server: &AssetServer,
 ) -> Task<SlippyTileDownloadTaskResult> {
     let thread_pool = IoTaskPool::get();
+    let asset_server = asset_server.clone();
     thread_pool.spawn(async move {
         let request = ehttp::Request {
             method: "GET".to_owned(),
@@ -181,9 +211,11 @@ fn spawn_slippy_tile_download_task(
         let response = ehttp::fetch_async(request)
             .await
             .expect("Failed to fetch tile image");
-        let mut content = std::io::Cursor::new(response.bytes);
-        let mut file_out = std::fs::File::create(format!("assets/{filename}")).unwrap();
-        std::io::copy(&mut content, &mut file_out).unwrap();
+        let asset_source = asset_server.get_source(AssetSourceId::Default).unwrap();
+        let asset_writer = asset_source.writer().unwrap();
+        let mut writer = asset_writer.write(Path::new(&filename)).await.unwrap();
+        writer.write_all(&response.bytes).await.unwrap();
+        writer.close().await.unwrap();
         SlippyTileDownloadTaskResult {
             path: Path::new(&filename).to_path_buf(),
         }
