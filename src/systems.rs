@@ -132,6 +132,7 @@ async fn does_file_exist(asset_server: &AssetServer, filename: &str) -> bool {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn download_and_track_slippy_tile(
     spc: SlippyTileCoordinates,
     zoom_level: ZoomLevel,
