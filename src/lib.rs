@@ -2,6 +2,7 @@
 
 mod constants;
 mod coordinates;
+mod display;
 mod download;
 mod settings;
 mod systems;
@@ -9,6 +10,7 @@ mod types;
 
 pub use constants::*;
 pub use coordinates::*;
+pub use display::*;
 pub use download::*;
 pub use settings::*;
 pub use types::*;
@@ -26,7 +28,8 @@ impl Plugin for SlippyTilesPlugin {
             .add_event::<DownloadSlippyTilesEvent>()
             .add_event::<SlippyTileDownloadedEvent>()
             .add_systems(Update, systems::download_slippy_tiles)
-            .add_systems(Update, systems::download_slippy_tiles_completed);
+            .add_systems(Update, systems::download_slippy_tiles_completed)
+            .add_systems(Update, display::display_tiles);
     }
 }
 
@@ -65,9 +68,9 @@ mod tests {
             tiles_directory: "tiles_directory".into(),
             ..Default::default()
         };
-        assert_eq!(sts.get_endpoint(), "endpoint");
+        assert_eq!(sts.endpoint, "endpoint");
         assert_eq!(
-            sts.get_tiles_directory(),
+            sts.tiles_directory,
             std::path::PathBuf::from("tiles_directory")
         );
         assert_eq!(sts.get_tiles_directory_string(), "tiles_directory");

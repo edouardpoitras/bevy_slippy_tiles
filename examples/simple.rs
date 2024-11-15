@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_slippy_tiles::{
-    Coordinates, DownloadSlippyTilesEvent, Radius, SlippyTileCoordinates,
-    SlippyTileDownloadedEvent, SlippyTilesPlugin, SlippyTilesSettings, TileSize, ZoomLevel,
+    Coordinates, DownloadSlippyTilesEvent, Radius, SlippyTilesPlugin, SlippyTilesSettings,
+    TileSize, ZoomLevel,
 };
 
 const LATITUDE: f64 = 45.4111;
@@ -10,18 +10,13 @@ const LONGITUDE: f64 = -75.6980;
 fn main() {
     App::new()
         .insert_resource(SlippyTilesSettings {
-            //endpoint: "https://tile.openstreetmap.org".into(), // Tile server endpoint.
-            //tiles_directory: PathBuf::from("tiles/"), // Directory to store tiles.
-            //max_concurrent_downloads: 4,
-            //max_retries: 3,
-            //rate_limit_requests: 10,
-            //rate_limit_window: Duration::from_secs(1),
+            reference_latitude: LATITUDE,
+            reference_longitude: LONGITUDE,
             ..Default::default()
         })
         .add_plugins(DefaultPlugins)
         .add_plugins(SlippyTilesPlugin)
         .add_systems(Startup, (spawn_camera, request_slippy_tiles))
-        .add_systems(Update, display_slippy_tiles)
         .run();
 }
 
@@ -42,38 +37,4 @@ fn request_slippy_tiles(mut download_slippy_tile_events: EventWriter<DownloadSli
         use_cache: true, // Don't make request if already requested previously, or if file already exists in tiles directory.
     };
     download_slippy_tile_events.send(slippy_tile_event);
-}
-
-fn display_slippy_tiles(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut slippy_tile_downloaded_events: EventReader<SlippyTileDownloadedEvent>,
-) {
-    for slippy_tile_downloaded_event in slippy_tile_downloaded_events.read() {
-        info!("Slippy tile fetched: {:?}", slippy_tile_downloaded_event);
-        let zoom_level = slippy_tile_downloaded_event.zoom_level;
-        // Convert our slippy tile position to pixels on the screen relative to the center tile.
-        let SlippyTileCoordinates {
-            x: center_x,
-            y: center_y,
-        } = Coordinates::from_latitude_longitude(LATITUDE, LONGITUDE)
-            .get_slippy_tile_coordinates(zoom_level);
-        let SlippyTileCoordinates {
-            x: current_x,
-            y: current_y,
-        } = slippy_tile_downloaded_event
-            .coordinates
-            .get_slippy_tile_coordinates(zoom_level);
-
-        let tile_pixels = slippy_tile_downloaded_event.tile_size.to_pixels() as f32;
-        let transform_x = (current_x as f32 - center_x as f32) * tile_pixels;
-        let transform_y = (center_y as f32 - current_y as f32) * tile_pixels;
-
-        // Add our slippy tile to the screen.
-        commands.spawn(SpriteBundle {
-            texture: asset_server.load(slippy_tile_downloaded_event.path.clone()),
-            transform: Transform::from_xyz(transform_x, transform_y, 0.0),
-            ..Default::default()
-        });
-    }
 }
