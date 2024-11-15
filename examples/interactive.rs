@@ -1,3 +1,11 @@
+//! Interactive example demonstrating map panning and coordinate conversion functionality.
+//!
+//! This example showcases:
+//! - Map initialization centered on specific coordinates (Ottawa, Canada)
+//! - Interactive panning using left mouse button drag
+//! - Coordinate conversion on right mouse button click
+//! - Tile downloading with caching support
+
 use bevy::{
     input::{mouse::MouseButton, ButtonInput},
     prelude::*,
@@ -8,15 +16,21 @@ use bevy_slippy_tiles::{
     TileSize, ZoomLevel, world_pixel_to_world_coords, world_coords_to_world_pixel,
 };
 
+/// Default latitude for the map center (Ottawa, Canada)
 const LATITUDE: f64 = 45.4111;
+/// Default longitude for the map center (Ottawa, Canada)
 const LONGITUDE: f64 = -75.6980;
 
+/// Resource to track the state of map panning operations
 #[derive(Resource, Default)]
 struct PanState {
+    /// Whether the user is currently panning the map
     is_panning: bool,
+    /// The last recorded cursor position during panning
     last_cursor_position: Option<Vec2>,
 }
 
+/// Sets up the application with necessary plugins and systems
 fn main() {
     App::new()
         .insert_resource(SlippyTilesSettings {
@@ -32,6 +46,12 @@ fn main() {
         .run();
 }
 
+/// Initial setup system that spawns the camera and requests the initial map tiles
+///
+/// This system:
+/// 1. Creates a 2D camera for viewing the map
+/// 2. Requests map tiles centered on the specified latitude/longitude
+/// 3. Sets up a radius of tiles around the center point for better coverage
 fn setup(
     mut commands: Commands,
     mut download_slippy_tile_events: EventWriter<DownloadSlippyTilesEvent>,
@@ -53,6 +73,12 @@ fn setup(
     download_slippy_tile_events.send(slippy_tile_event);
 }
 
+/// System handling map panning functionality using the left mouse button
+///
+/// The panning system:
+/// - Initiates panning when left mouse button is pressed
+/// - Updates the camera position based on cursor movement while panning
+/// - Stops panning when left mouse button is released
 fn pan_camera(
     mut pan_state: ResMut<PanState>,
     mut camera_query: Query<&mut Transform, With<Camera>>,
@@ -90,6 +116,13 @@ fn pan_camera(
     }
 }
 
+/// System handling right-click events for coordinate conversion demonstration
+///
+/// When right-clicking on the map, this system:
+/// 1. Converts screen coordinates to world coordinates
+/// 2. Adjusts for the reference point offset
+/// 3. Converts the position to latitude/longitude
+/// 4. Logs the various coordinate representations (screen, map, world)
 fn handle_click(
     camera_query: Query<(&Camera, &GlobalTransform)>,
     q_window: Query<&Window, With<PrimaryWindow>>,
