@@ -16,15 +16,12 @@ fn main() {
         })
         .add_plugins(DefaultPlugins)
         .add_plugins(SlippyTilesPlugin)
-        .add_systems(Startup, (spawn_camera, request_slippy_tiles))
+        .add_systems(Startup, request_slippy_tiles)
         .run();
 }
 
-fn spawn_camera(mut commands: Commands) {
+fn request_slippy_tiles(mut commands: Commands, mut download_slippy_tile_events: EventWriter<DownloadSlippyTilesEvent>) {
     commands.spawn(Camera2dBundle::default());
-}
-
-fn request_slippy_tiles(mut download_slippy_tile_events: EventWriter<DownloadSlippyTilesEvent>) {
     info!(
         "Requesting slippy tile for latitude/longitude: {:?}",
         (LATITUDE, LONGITUDE)

@@ -22,11 +22,11 @@ A helper bevy plugin to handle downloading and displaying OpenStreetMap-complian
 
 ## Example
 
-Here's a snippet showing how to download and display map tiles at a specific location. This app will load a slippy tile and its surrounding 8 tiles at the specified latitude and longitude.
+Here's a snippet showing how to download and display map tiles at a specific location. This app will load a slippy tile and its surrounding 24 tiles at the specified latitude and longitude.
 
 Run with: `cargo run --example simple`
 
-```rust
+```rust,ignore
 use bevy::prelude::*;
 use bevy_slippy_tiles::*;
 
@@ -43,11 +43,12 @@ fn main() {
         })
         .add_plugins(DefaultPlugins)
         .add_plugins(SlippyTilesPlugin)
-        .add_systems(Startup, (spawn_camera, request_slippy_tiles))
+        .add_systems(Startup, request_slippy_tiles)
         .run();
 }
 
-fn request_slippy_tiles(mut download_slippy_tile_events: EventWriter<DownloadSlippyTilesEvent>) {
+fn request_slippy_tiles(mut commands: Commands, mut download_slippy_tile_events: EventWriter<DownloadSlippyTilesEvent>) {
+    commands.spawn(Camera2dBundle::default());
     let slippy_tile_event = DownloadSlippyTilesEvent {
         tile_size: TileSize::Normal,    // Size of tiles - Normal = 256px, Large = 512px
         zoom_level: ZoomLevel::L18,     // Map zoom level (L0 = entire world, L19 = closest)
@@ -75,7 +76,7 @@ The plugin uses reasonable defaults but can be configured:
 - `z_layer`: Z coordinate for rendered tiles, useful for layering with other sprites
 - `auto_render`: Toggle automatic tile rendering (disable for manual control)
 
-```rust
+```rust,ignore
 SlippyTilesSettings {
     endpoint: "https://tile.openstreetmap.org".into(), // Tile server endpoint
     tiles_directory: "tiles/".into(), // Cache directory
