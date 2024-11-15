@@ -9,11 +9,15 @@ const LONGITUDE: f64 = -75.6980;
 
 fn main() {
     App::new()
-        // Our slippy tiles settings and plugin
-        .insert_resource(SlippyTilesSettings::new(
-            "https://tile.openstreetmap.org", // Tile server endpoint.
-            "tiles/",                         // assets/ folder storing the slippy tile downloads.
-        ))
+        .insert_resource(SlippyTilesSettings {
+            endpoint: "https://tile.openstreetmap.org".into(), // Tile server endpoint.
+            //tiles_directory: PathBuf::from("tiles/"), // Directory to store tiles.
+            //max_concurrent_downloads: 4,
+            //max_retries: 3,
+            //rate_limit_requests: 10,
+            //rate_limit_window: Duration::from_secs(1),
+            ..Default::default()
+        })
         .add_plugins(DefaultPlugins)
         .add_plugins(SlippyTilesPlugin)
         .add_systems(Startup, (spawn_camera, request_slippy_tiles))

@@ -1,5 +1,5 @@
 use bevy::prelude::Resource;
-use std::path::PathBuf;
+use std::{path::PathBuf, time::Duration};
 
 /// Type used to dictate various settings for this crate.
 ///
@@ -7,22 +7,25 @@ use std::path::PathBuf;
 /// TODO: Choose a few as backup and abide by usage policy - <https://wiki.openstreetmap.org/wiki/Tile_servers>
 ///
 /// `tiles_directory` - The folder that all tiles will be stored in.
+/// 
+/// `max_concurrent_downloads` - Maximum number of concurrent tile downloads.
+/// 
+/// `max_retries` - Maximum number of retry attempts for failed downloads.
+/// 
+/// `rate_limit_requests` - Maximum number of requests allowed within the rate limit window.
+/// 
+/// `rate_limit_window` - Duration of the rate limit window.
 #[derive(Clone, Resource)]
 pub struct SlippyTilesSettings {
     pub endpoint: String,
     pub tiles_directory: PathBuf,
+    pub max_concurrent_downloads: usize,
+    pub max_retries: u32,
+    pub rate_limit_requests: usize,
+    pub rate_limit_window: Duration,
 }
 
 impl SlippyTilesSettings {
-    /// Used to initialize slippy tile settings without using default values.
-    /// Will also create the tiles directory immediately.
-    pub fn new(endpoint: &str, tiles_directory: &str) -> SlippyTilesSettings {
-        SlippyTilesSettings {
-            endpoint: endpoint.to_owned(),
-            tiles_directory: PathBuf::from(tiles_directory),
-        }
-    }
-
     pub fn get_endpoint(&self) -> String {
         self.endpoint.clone()
     }
@@ -36,9 +39,15 @@ impl SlippyTilesSettings {
     }
 }
 
-/// Default values include localhost:8080 for the endpoint, `tiles/` for the directory, TileSize::Normal, and ZoomLevel(18).
 impl Default for SlippyTilesSettings {
     fn default() -> Self {
-        Self::new("http://localhost:8080", "tiles/")
+        Self {
+            endpoint: "https://tile.openstreetmap.org".into(),
+            tiles_directory: PathBuf::from("tiles/"),
+            max_concurrent_downloads: 4,
+            max_retries: 3,
+            rate_limit_requests: 10,
+            rate_limit_window: Duration::from_secs(1),
+        }
     }
 }

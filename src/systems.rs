@@ -14,7 +14,7 @@ use std::{
         atomic::{AtomicUsize, Ordering},
         Arc,
     },
-    time::{Duration, Instant},
+    time::Instant,
 };
 
 use crate::{
@@ -23,11 +23,6 @@ use crate::{
     SlippyTileDownloadTaskResult, SlippyTileDownloadTasks, SlippyTileDownloadedEvent,
     SlippyTilesSettings, TileDownloadStatus, TileSize, UseCache, ZoomLevel,
 };
-
-const MAX_CONCURRENT_DOWNLOADS: usize = 4;
-const MAX_RETRIES: u32 = 3;
-const RATE_LIMIT_REQUESTS: usize = 10;
-const RATE_LIMIT_WINDOW: Duration = Duration::from_secs(1);
 
 #[derive(Debug)]
 struct BufferedRequest {
@@ -45,10 +40,10 @@ pub struct DownloadRateLimiter {
 }
 
 impl DownloadRateLimiter {
-    fn can_make_request(&mut self, now: Instant) -> bool {
+    fn can_make_request(&mut self, now: Instant, settings: &SlippyTilesSettings) -> bool {
         // Remove old requests outside the window
         while let Some(time) = self.requests.front() {
-            if now.duration_since(*time) > RATE_LIMIT_WINDOW {
+            if now.duration_since(*time) > settings.rate_limit_window {
                 self.requests.pop_front();
             } else {
                 break;
@@ -56,7 +51,7 @@ impl DownloadRateLimiter {
         }
 
         // Check if we can make a new request
-        if self.requests.len() < RATE_LIMIT_REQUESTS {
+        if self.requests.len() < settings.rate_limit_requests {
             self.requests.push_back(now);
             true
         } else {
@@ -87,9 +82,10 @@ impl DownloadRateLimiter {
         slippy_tile_download_status: &mut ResMut<SlippyTileDownloadStatus>,
         asset_server: &AssetServer,
         active_downloads: &ActiveDownloads,
+        settings: &SlippyTilesSettings,
     ) {
         let now = Instant::now();
-        while self.can_make_request(now) {
+        while self.can_make_request(now, settings) {
             if let Some(request) = self.buffered_requests.pop_front() {
                 let spc = SlippyTileCoordinates {
                     x: request.coords.0,
@@ -106,6 +102,7 @@ impl DownloadRateLimiter {
                     slippy_tile_download_status,
                     asset_server,
                     active_downloads,
+                    settings,
                 );
             } else {
                 break;
@@ -139,6 +136,7 @@ pub fn download_slippy_tiles(
         &mut slippy_tile_download_status,
         &asset_server,
         &active_downloads,
+        &slippy_tiles_settings,
     );
 
     for download_slippy_tile in download_slippy_tile_events.read() {
@@ -154,7 +152,7 @@ pub fn download_slippy_tiles(
         for x in min_x..=max_x {
             for y in min_y..=max_y {
                 // Check concurrent download limit
-                if active_downloads.0.load(Ordering::Relaxed) >= MAX_CONCURRENT_DOWNLOADS {
+                if active_downloads.0.load(Ordering::Relaxed) >= slippy_tiles_settings.max_concurrent_downloads {
                     warn!("Max concurrent downloads reached, buffering tile download");
                     rate_limiter.buffer_request(
                         (x, y),
@@ -205,7 +203,7 @@ pub fn download_slippy_tiles(
                         }) {
                             if matches!(status.load_status, DownloadStatus::Downloading) {
                                 // Re-download if timed out
-                                if !rate_limiter.can_make_request(Instant::now()) {
+                                if !rate_limiter.can_make_request(Instant::now(), &slippy_tiles_settings) {
                                     rate_limiter.buffer_request(
                                         (x, y),
                                         download_slippy_tile.zoom_level,
@@ -224,6 +222,7 @@ pub fn download_slippy_tiles(
                                         &mut slippy_tile_download_status,
                                         &asset_server,
                                         &active_downloads,
+                                        &slippy_tiles_settings,
                                     );
                                 }
                             }
@@ -233,7 +232,7 @@ pub fn download_slippy_tiles(
                     (UseCache::No, _, _)
                     // OR not downloading yet and no file exists on disk.
                     | (UseCache::Yes, AlreadyDownloaded::No, FileExists::No) => {
-                        if !rate_limiter.can_make_request(Instant::now()) {
+                        if !rate_limiter.can_make_request(Instant::now(), &slippy_tiles_settings) {
                             rate_limiter.buffer_request(
                                 (x, y),
                                 download_slippy_tile.zoom_level,
@@ -252,6 +251,7 @@ pub fn download_slippy_tiles(
                                 &mut slippy_tile_download_status,
                                 &asset_server,
                                 &active_downloads,
+                                &slippy_tiles_settings,
                             );
                         }
                     }
@@ -312,6 +312,7 @@ fn download_and_track_slippy_tile(
     slippy_tile_download_status: &mut ResMut<SlippyTileDownloadStatus>,
     asset_server: &AssetServer,
     active_downloads: &ActiveDownloads,
+    settings: &SlippyTilesSettings,
 ) {
     let task = download_slippy_tile(
         spc,
@@ -321,6 +322,7 @@ fn download_and_track_slippy_tile(
         filename.clone(),
         asset_server,
         active_downloads.0.clone(),
+        settings.max_retries,
     );
 
     slippy_tile_download_tasks.insert(spc.x, spc.y, zoom_level, tile_size, task);
@@ -341,13 +343,14 @@ fn download_slippy_tile(
     filename: String,
     asset_server: &AssetServer,
     active_downloads: Arc<AtomicUsize>,
+    max_retries: u32,
 ) -> Task<SlippyTileDownloadTaskResult> {
     debug!(
         "Fetching map tile at position {:?} with zoom level {:?} from {:?}",
         spc, zoom_level, endpoint
     );
     let tile_url = get_tile_url(endpoint, tile_size, zoom_level, spc.x, spc.y);
-    spawn_slippy_tile_download_task(tile_url, filename, asset_server, active_downloads)
+    spawn_slippy_tile_download_task(tile_url, filename, asset_server, active_downloads, max_retries)
 }
 
 fn get_tile_url(
@@ -372,6 +375,7 @@ fn spawn_slippy_tile_download_task(
     filename: String,
     asset_server: &AssetServer,
     active_downloads: Arc<AtomicUsize>,
+    max_retries: u32,
 ) -> Task<SlippyTileDownloadTaskResult> {
     let thread_pool = IoTaskPool::get();
     let asset_server = asset_server.clone();
@@ -381,7 +385,7 @@ fn spawn_slippy_tile_download_task(
     thread_pool.spawn(async move {
         let mut retries = 0;
         let result = loop {
-            if retries >= MAX_RETRIES {
+            if retries >= max_retries {
                 warn!("Max retries reached for tile download: {}", tile_url);
                 break Err("Max retries reached".to_string());
             }
@@ -391,7 +395,7 @@ fn spawn_slippy_tile_download_task(
                 url: tile_url.clone(),
                 body: vec![],
                 headers: ehttp::Headers::new(&[
-                    ("User-Agent", "bevy_slippy_tiles/0.6.0 (https://github.com/edouardpoitras/bevy_slippy_tiles)"),
+                    ("User-Agent", "bevy_slippy_tiles/0.7.0 (https://github.com/edouardpoitras/bevy_slippy_tiles)"),
                     ("Accept", "image/png"),
                 ]),
             };

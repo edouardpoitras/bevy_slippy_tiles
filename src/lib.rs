@@ -44,7 +44,7 @@ mod tests {
 
     #[test]
     fn test_slippy_tile_settings() {
-        let sts = SlippyTilesSettings::new("endpoint", "tiles_directory");
+        let sts = SlippyTilesSettings { endpoint: "endpoint".into(), tiles_directory: "tiles_directory".into(), ..Default::default() };
         assert_eq!(sts.get_endpoint(), "endpoint");
         assert_eq!(
             sts.get_tiles_directory(),
@@ -53,8 +53,6 @@ mod tests {
         assert_eq!(sts.get_tiles_directory_string(), "tiles_directory");
         assert!(std::path::Path::try_exists("assets/tiles_directory".as_ref()).is_ok());
     }
-
-    // EDDIE - need to fix this test. Could be related to precision issue I'm having?
 
     #[test]
     fn test_slippy_tile_coordinates() {
