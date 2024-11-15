@@ -20,7 +20,10 @@ fn main() {
         .run();
 }
 
-fn request_slippy_tiles(mut commands: Commands, mut download_slippy_tile_events: EventWriter<DownloadSlippyTilesEvent>) {
+fn request_slippy_tiles(
+    mut commands: Commands,
+    mut download_slippy_tile_events: EventWriter<DownloadSlippyTilesEvent>,
+) {
     commands.spawn(Camera2dBundle::default());
     info!(
         "Requesting slippy tile for latitude/longitude: {:?}",
