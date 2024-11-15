@@ -152,7 +152,9 @@ pub fn download_slippy_tiles(
         for x in min_x..=max_x {
             for y in min_y..=max_y {
                 // Check concurrent download limit
-                if active_downloads.0.load(Ordering::Relaxed) >= slippy_tiles_settings.max_concurrent_downloads {
+                if active_downloads.0.load(Ordering::Relaxed)
+                    >= slippy_tiles_settings.max_concurrent_downloads
+                {
                     warn!("Max concurrent downloads reached, buffering tile download");
                     rate_limiter.buffer_request(
                         (x, y),
@@ -335,6 +337,7 @@ fn download_and_track_slippy_tile(
     );
 }
 
+#[allow(clippy::too_many_arguments)]
 fn download_slippy_tile(
     spc: SlippyTileCoordinates,
     zoom_level: ZoomLevel,
@@ -350,7 +353,13 @@ fn download_slippy_tile(
         spc, zoom_level, endpoint
     );
     let tile_url = get_tile_url(endpoint, tile_size, zoom_level, spc.x, spc.y);
-    spawn_slippy_tile_download_task(tile_url, filename, asset_server, active_downloads, max_retries)
+    spawn_slippy_tile_download_task(
+        tile_url,
+        filename,
+        asset_server,
+        active_downloads,
+        max_retries,
+    )
 }
 
 fn get_tile_url(

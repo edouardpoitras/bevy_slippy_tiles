@@ -10,7 +10,7 @@ const LONGITUDE: f64 = -75.6980;
 fn main() {
     App::new()
         .insert_resource(SlippyTilesSettings {
-            endpoint: "https://tile.openstreetmap.org".into(), // Tile server endpoint.
+            //endpoint: "https://tile.openstreetmap.org".into(), // Tile server endpoint.
             //tiles_directory: PathBuf::from("tiles/"), // Directory to store tiles.
             //max_concurrent_downloads: 4,
             //max_retries: 3,

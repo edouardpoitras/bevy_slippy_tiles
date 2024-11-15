@@ -7,13 +7,13 @@ use std::{path::PathBuf, time::Duration};
 /// TODO: Choose a few as backup and abide by usage policy - <https://wiki.openstreetmap.org/wiki/Tile_servers>
 ///
 /// `tiles_directory` - The folder that all tiles will be stored in.
-/// 
+///
 /// `max_concurrent_downloads` - Maximum number of concurrent tile downloads.
-/// 
+///
 /// `max_retries` - Maximum number of retry attempts for failed downloads.
-/// 
+///
 /// `rate_limit_requests` - Maximum number of requests allowed within the rate limit window.
-/// 
+///
 /// `rate_limit_window` - Duration of the rate limit window.
 #[derive(Clone, Resource)]
 pub struct SlippyTilesSettings {

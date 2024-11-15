@@ -37,7 +37,12 @@ mod tests {
     const EPSILON: f64 = 1e-14;
 
     fn assert_approx_eq(a: f64, b: f64) {
-        assert!((a - b).abs() < EPSILON, "Expected {} to be approximately equal to {}", a, b);
+        assert!(
+            (a - b).abs() < EPSILON,
+            "Expected {} to be approximately equal to {}",
+            a,
+            b
+        );
     }
 
     fn assert_coords_approx_eq(a: &LatitudeLongitudeCoordinates, b: &LatitudeLongitudeCoordinates) {
@@ -55,7 +60,11 @@ mod tests {
 
     #[test]
     fn test_slippy_tile_settings() {
-        let sts = SlippyTilesSettings { endpoint: "endpoint".into(), tiles_directory: "tiles_directory".into(), ..Default::default() };
+        let sts = SlippyTilesSettings {
+            endpoint: "endpoint".into(),
+            tiles_directory: "tiles_directory".into(),
+            ..Default::default()
+        };
         assert_eq!(sts.get_endpoint(), "endpoint");
         assert_eq!(
             sts.get_tiles_directory(),
@@ -67,59 +76,60 @@ mod tests {
 
     #[test]
     fn test_slippy_tile_coordinates() {
-        let coords = SlippyTileCoordinates::from_latitude_longitude(85.0511287798066, 0.0, ZoomLevel::L1);
+        let coords =
+            SlippyTileCoordinates::from_latitude_longitude(85.0511287798066, 0.0, ZoomLevel::L1);
         assert_eq!(coords, SlippyTileCoordinates { x: 1, y: 0 });
-        
+
         let result = SlippyTileCoordinates::to_latitude_longitude(
             &SlippyTileCoordinates { x: 1, y: 0 },
-            ZoomLevel::L1
+            ZoomLevel::L1,
         );
         assert_coords_approx_eq(
             &result,
             &LatitudeLongitudeCoordinates {
                 latitude: 85.0511287798066,
-                longitude: 0.0
-            }
+                longitude: 0.0,
+            },
         );
 
         let coords = SlippyTileCoordinates::from_latitude_longitude(0.0, 0.0, ZoomLevel::L10);
         assert_eq!(coords, SlippyTileCoordinates { x: 512, y: 512 });
-        
+
         let result = SlippyTileCoordinates::to_latitude_longitude(
             &SlippyTileCoordinates { x: 512, y: 512 },
-            ZoomLevel::L10
+            ZoomLevel::L10,
         );
         assert_coords_approx_eq(
             &result,
             &LatitudeLongitudeCoordinates {
                 latitude: 0.0,
-                longitude: 0.0
-            }
+                longitude: 0.0,
+            },
         );
 
         let coords = SlippyTileCoordinates::from_latitude_longitude(
             48.81590713080016,
             2.2686767578125,
-            ZoomLevel::L17
+            ZoomLevel::L17,
         );
         assert_eq!(coords, SlippyTileCoordinates { x: 66362, y: 45115 });
-        
+
         let result = SlippyTileCoordinates::to_latitude_longitude(
             &SlippyTileCoordinates { x: 66362, y: 45115 },
-            ZoomLevel::L17
+            ZoomLevel::L17,
         );
         assert_coords_approx_eq(
             &result,
             &LatitudeLongitudeCoordinates {
                 latitude: 48.81590713080016,
-                longitude: 2.2686767578125
-            }
+                longitude: 2.2686767578125,
+            },
         );
 
         let coords = SlippyTileCoordinates::from_latitude_longitude(
             0.004806518549043551,
             0.004119873046875,
-            ZoomLevel::L19
+            ZoomLevel::L19,
         );
         assert_eq!(
             coords,
@@ -128,26 +138,26 @@ mod tests {
                 y: 262137
             }
         );
-        
+
         let result = SlippyTileCoordinates::to_latitude_longitude(
             &SlippyTileCoordinates {
                 x: 262150,
-                y: 262137
+                y: 262137,
             },
-            ZoomLevel::L19
+            ZoomLevel::L19,
         );
         assert_coords_approx_eq(
             &result,
             &LatitudeLongitudeCoordinates {
                 latitude: 0.004806518549043551,
-                longitude: 0.004119873046875
-            }
+                longitude: 0.004119873046875,
+            },
         );
 
         let coords = SlippyTileCoordinates::from_latitude_longitude(
             26.850416392948524,
             72.57980346679688,
-            ZoomLevel::L19
+            ZoomLevel::L19,
         );
         assert_eq!(
             coords,
@@ -156,20 +166,20 @@ mod tests {
                 y: 221525
             }
         );
-        
+
         let result = SlippyTileCoordinates::to_latitude_longitude(
             &SlippyTileCoordinates {
                 x: 367846,
-                y: 221525
+                y: 221525,
             },
-            ZoomLevel::L19
+            ZoomLevel::L19,
         );
         assert_coords_approx_eq(
             &result,
             &LatitudeLongitudeCoordinates {
                 latitude: 26.850416392948524,
-                longitude: 72.57980346679688
-            }
+                longitude: 72.57980346679688,
+            },
         );
     }
 

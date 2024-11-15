@@ -6,7 +6,7 @@
 ![MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Apache](https://img.shields.io/badge/license-Apache-blue.svg)
 
-A helper bevy plugin to handle downloading OpenStreetMap-compliant [slippy tiles](https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames).
+A helper bevy plugin to handle downloading OpenStreetMap-compliant [slippy tiles](https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames). Configurable concurrency, retries, and rate limit settings.
 
 [`DownloadSlippyTilesEvent`] can be fired to request one or more slippy tile downloads.
 
@@ -32,10 +32,11 @@ const LONGITUDE: f64 = -75.6980;
 fn main() {
     App::new()
         // Our slippy tiles settings and plugin
-        .insert_resource(SlippyTilesSettings::new(
-            "https://tile.openstreetmap.org", // Tile server endpoint.
-            "tiles/",                         // assets/ folder storing the slippy tile downloads.
-        ))
+        .insert_resource(SlippyTilesSettings {
+            endpoint: "https://tile.openstreetmap.org", // Tile server endpoint.
+            tiles_directory: "tiles/", // assets/ folder storing the slippy tile downloads.
+            ..Default::default()
+        })
         .add_plugins(DefaultPlugins)
         .add_plugins(SlippyTilesPlugin);
 
@@ -86,7 +87,7 @@ fn display_slippy_tiles(
 
 |bevy|bevy_slippy_tiles|
 |---|---|
-|0.14|0.6|
+|0.14|0.7|
 |0.13|0.5|
 |0.12|0.4|
 |0.11|0.3|
