@@ -13,8 +13,9 @@ use bevy::{
     window::PrimaryWindow,
 };
 use bevy_slippy_tiles::{
-    Coordinates, DownloadSlippyTilesEvent, MapTile, Radius, SlippyTilesPlugin, SlippyTilesSettings,
-    TileSize, ZoomLevel, world_pixel_to_world_coords, world_coords_to_world_pixel,
+    world_coords_to_world_pixel, world_pixel_to_world_coords, Coordinates,
+    DownloadSlippyTilesEvent, MapTile, Radius, SlippyTilesPlugin, SlippyTilesSettings, TileSize,
+    ZoomLevel,
 };
 
 /// Default latitude for the map center (Ottawa, Canada)
@@ -37,8 +38,8 @@ struct PanState {
 #[derive(Resource)]
 struct CurrentZoom {
     level: ZoomLevel,
-    changed: bool,  // Track if zoom level has changed
-    last_zoom_time: f32,  // Time of last zoom operation
+    changed: bool,       // Track if zoom level has changed
+    last_zoom_time: f32, // Time of last zoom operation
 }
 
 impl Default for CurrentZoom {
@@ -82,12 +83,12 @@ fn setup(
     current_zoom: Res<CurrentZoom>,
 ) {
     commands.spawn(Camera2dBundle::default());
-    
+
     info!(
         "Requesting slippy tile for latitude/longitude: {:?}",
         (LATITUDE, LONGITUDE)
     );
-    
+
     let slippy_tile_event = DownloadSlippyTilesEvent {
         tile_size: TileSize::Normal,
         zoom_level: current_zoom.level,
@@ -129,7 +130,7 @@ fn pan_camera(
     // If we're panning and have cursor movement
     if pan_state.is_panning {
         let mut camera_transform = camera_query.single_mut();
-        
+
         if let Some(current_position) = window.cursor_position() {
             if let Some(last_position) = pan_state.last_cursor_position {
                 let delta = current_position - last_position;
@@ -174,19 +175,21 @@ fn handle_zoom(
     // Only process the first wheel event in the queue
     if let Some(event) = mouse_wheel.read().next() {
         let zoom_delta = event.y.signum() as i32;
-        
+
         // Get current zoom level as u8
         let current_level = current_zoom.level.to_u8();
-        
+
         // Calculate new zoom level, clamped between 14 and 19
         let new_level = (current_level as i32 + zoom_delta).clamp(14, 19) as u8;
-        
+
         // Only proceed if zoom level actually changed
         if new_level != current_level {
             // Convert cursor position to world coordinates before zoom
             if let Some(cursor_pos) = q_window.single().cursor_position() {
                 let (camera, camera_transform) = camera_query.single();
-                if let Some(cursor_world_pos) = camera.viewport_to_world_2d(camera_transform, cursor_pos) {
+                if let Some(cursor_world_pos) =
+                    camera.viewport_to_world_2d(camera_transform, cursor_pos)
+                {
                     // Get the reference point's pixel coordinates
                     let (ref_x, ref_y) = world_coords_to_world_pixel(
                         &bevy_slippy_tiles::LatitudeLongitudeCoordinates {
@@ -198,7 +201,9 @@ fn handle_zoom(
                     );
 
                     // Convert cursor position to lat/lon
-                    let offset = settings.transform_offset.map_or(Vec3::ZERO, |t| t.translation);
+                    let offset = settings
+                        .transform_offset
+                        .map_or(Vec3::ZERO, |t| t.translation);
                     let adjusted_position = cursor_world_pos + offset.truncate();
                     let world_coords = world_pixel_to_world_coords(
                         adjusted_position.x as f64 + ref_x,
@@ -255,13 +260,17 @@ fn handle_click(
     if mouse_button.just_pressed(MouseButton::Right) {
         let (camera, camera_transform) = camera_query.single();
         let window = q_window.single();
-        
+
         if let Some(cursor_position) = window.cursor_position() {
-            if let Some(world_2d_position) = camera.viewport_to_world_2d(camera_transform, cursor_position) {
+            if let Some(world_2d_position) =
+                camera.viewport_to_world_2d(camera_transform, cursor_position)
+            {
                 // Convert map position to world coordinates considering the reference point and offset
-                let offset = settings.transform_offset.map_or(Vec3::ZERO, |t| t.translation);
+                let offset = settings
+                    .transform_offset
+                    .map_or(Vec3::ZERO, |t| t.translation);
                 let adjusted_position = world_2d_position + offset.truncate();
-                
+
                 // Get the reference point's pixel coordinates
                 let (ref_x, ref_y) = world_coords_to_world_pixel(
                     &bevy_slippy_tiles::LatitudeLongitudeCoordinates {
@@ -280,9 +289,15 @@ fn handle_click(
                     current_zoom.level,
                 );
 
-                info!("Clicked:\nScreen: {} x {}\nMap: {}, {}\nWorld: lat {} lon {}\nZoom: {}",
-                    cursor_position.x, cursor_position.y, world_2d_position.x, world_2d_position.y, 
-                    world_coords.latitude, world_coords.longitude, current_zoom.level.to_u8()
+                info!(
+                    "Clicked:\nScreen: {} x {}\nMap: {}, {}\nWorld: lat {} lon {}\nZoom: {}",
+                    cursor_position.x,
+                    cursor_position.y,
+                    world_2d_position.x,
+                    world_2d_position.y,
+                    world_coords.latitude,
+                    world_coords.longitude,
+                    current_zoom.level.to_u8()
                 );
             }
         }
