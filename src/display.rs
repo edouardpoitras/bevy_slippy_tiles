@@ -51,11 +51,8 @@ pub fn display_tiles(
 
         // Spawn the tile sprite
         commands.spawn((
-            SpriteBundle {
-                texture: asset_server.load(event.path.clone()),
-                transform: Transform::from_xyz(transform_x, transform_y, settings.z_layer),
-                ..default()
-            },
+            Sprite::from_image(asset_server.load(event.path.clone())),
+            Transform::from_xyz(transform_x, transform_y, settings.z_layer),
             MapTile,
         ));
     }

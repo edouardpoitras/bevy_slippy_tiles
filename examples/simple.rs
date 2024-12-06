@@ -24,7 +24,7 @@ fn request_slippy_tiles(
     mut commands: Commands,
     mut download_slippy_tile_events: EventWriter<DownloadSlippyTilesEvent>,
 ) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
     info!(
         "Requesting slippy tile for latitude/longitude: {:?}",
         (LATITUDE, LONGITUDE)

@@ -99,6 +99,7 @@ SlippyTilesSettings {
 
 |bevy|bevy_slippy_tiles|
 |---|---|
+|0.15|0.8|
 |0.14|0.7|
 |0.13|0.5|
 |0.12|0.4|

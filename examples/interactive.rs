@@ -82,7 +82,7 @@ fn setup(
     mut download_slippy_tile_events: EventWriter<DownloadSlippyTilesEvent>,
     current_zoom: Res<CurrentZoom>,
 ) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
 
     info!(
         "Requesting slippy tile for latitude/longitude: {:?}",
@@ -168,7 +168,7 @@ fn handle_zoom(
     time: Res<Time>,
 ) {
     // Check if enough time has passed since the last zoom operation
-    if time.elapsed_seconds() - current_zoom.last_zoom_time < ZOOM_COOLDOWN {
+    if time.elapsed_secs() - current_zoom.last_zoom_time < ZOOM_COOLDOWN {
         return;
     }
 
@@ -187,8 +187,9 @@ fn handle_zoom(
             // Convert cursor position to world coordinates before zoom
             if let Some(cursor_pos) = q_window.single().cursor_position() {
                 let (camera, camera_transform) = camera_query.single();
-                if let Some(cursor_world_pos) =
-                    camera.viewport_to_world_2d(camera_transform, cursor_pos)
+                if let Some(cursor_world_pos) = camera
+                    .viewport_to_world_2d(camera_transform, cursor_pos)
+                    .ok()
                 {
                     // Get the reference point's pixel coordinates
                     let (ref_x, ref_y) = world_coords_to_world_pixel(
@@ -223,7 +224,7 @@ fn handle_zoom(
                         _ => current_zoom.level,
                     };
                     current_zoom.changed = true;
-                    current_zoom.last_zoom_time = time.elapsed_seconds();
+                    current_zoom.last_zoom_time = time.elapsed_secs();
 
                     // Request new tiles at the new zoom level
                     let slippy_tile_event = DownloadSlippyTilesEvent {
@@ -262,8 +263,9 @@ fn handle_click(
         let window = q_window.single();
 
         if let Some(cursor_position) = window.cursor_position() {
-            if let Some(world_2d_position) =
-                camera.viewport_to_world_2d(camera_transform, cursor_position)
+            if let Some(world_2d_position) = camera
+                .viewport_to_world_2d(camera_transform, cursor_position)
+                .ok()
             {
                 // Convert map position to world coordinates considering the reference point and offset
                 let offset = settings
