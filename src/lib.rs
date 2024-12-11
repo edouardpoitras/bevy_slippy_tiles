@@ -90,29 +90,38 @@ mod tests {
             SlippyTileCoordinates { x: 0, y: 0 }
         );
         assert_coords_approx_eq(
-            &SlippyTileCoordinates::to_latitude_longitude(&SlippyTileCoordinates { x: 1, y: 1 }, ZoomLevel::L0),
+            &SlippyTileCoordinates::to_latitude_longitude(
+                &SlippyTileCoordinates { x: 1, y: 1 },
+                ZoomLevel::L0,
+            ),
             &LatitudeLongitudeCoordinates {
                 latitude: -85.0511287798066,
                 longitude: 180.0,
-            }
+            },
         );
     }
 
     #[test]
     fn test_slippy_tile_coordinates_l1() {
         assert_coords_approx_eq(
-            &SlippyTileCoordinates::to_latitude_longitude(&SlippyTileCoordinates { x: 1, y: 0 }, ZoomLevel::L1),
+            &SlippyTileCoordinates::to_latitude_longitude(
+                &SlippyTileCoordinates { x: 1, y: 0 },
+                ZoomLevel::L1,
+            ),
             &LatitudeLongitudeCoordinates {
                 latitude: 89.0511287798066,
                 longitude: 0.0,
-            }
+            },
         );
         assert_eq!(
             SlippyTileCoordinates::from_latitude_longitude(0.0, 175.0, ZoomLevel::L1),
             SlippyTileCoordinates { x: 1, y: 1 }
         );
         assert_coords_approx_eq(
-            &SlippyTileCoordinates::to_latitude_longitude(&SlippyTileCoordinates { x: 1, y: 1 }, ZoomLevel::L1),
+            &SlippyTileCoordinates::to_latitude_longitude(
+                &SlippyTileCoordinates { x: 1, y: 1 },
+                ZoomLevel::L1,
+            ),
             &LatitudeLongitudeCoordinates {
                 latitude: 0.0,
                 longitude: 0.0,

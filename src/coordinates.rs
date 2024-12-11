@@ -1,6 +1,6 @@
-use std::f64::consts::PI;
 use crate::types::{TileSize, ZoomLevel};
 use bevy::prelude::Component;
+use std::f64::consts::PI;
 
 /// Slippy map tile coordinates: <https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames>
 /// The x and y coordinates are used directly in the endpoint download requests.
