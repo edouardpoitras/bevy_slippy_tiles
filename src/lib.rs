@@ -109,7 +109,7 @@ mod tests {
                 ZoomLevel::L1,
             ),
             &LatitudeLongitudeCoordinates {
-                latitude: 89.0511287798066,
+                latitude: 85.0511287798066,
                 longitude: 0.0,
             },
         );
