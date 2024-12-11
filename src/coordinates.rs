@@ -1,3 +1,4 @@
+use std::f64::consts::PI;
 use crate::types::{TileSize, ZoomLevel};
 use bevy::prelude::Component;
 
@@ -16,15 +17,17 @@ impl SlippyTileCoordinates {
         lon: f64,
         zoom_level: ZoomLevel,
     ) -> SlippyTileCoordinates {
-        let x = longitude_to_tile_x(lon, zoom_level.to_u8());
-        let y = latitude_to_tile_y(lat, zoom_level.to_u8());
+        let zoom = zoom_level.to_u8() as u32;
+        let x = longitude_to_tile_x(lon, zoom);
+        let y = latitude_to_tile_y(lat, zoom);
         SlippyTileCoordinates { x, y }
     }
 
     /// Get real-world lat/lon based on slippy tile coordinates.
     pub fn to_latitude_longitude(&self, zoom_level: ZoomLevel) -> LatitudeLongitudeCoordinates {
-        let lon = tile_x_to_longitude(self.x, zoom_level.to_u8());
-        let lat = tile_y_to_latitude(self.y, zoom_level.to_u8());
+        let zoom = zoom_level.to_u8() as u32;
+        let lon = tile_x_to_longitude(self.x, zoom);
+        let lat = tile_y_to_latitude(self.y, zoom);
         LatitudeLongitudeCoordinates {
             latitude: lat,
             longitude: lon,
@@ -74,33 +77,27 @@ impl Coordinates {
 }
 
 // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations
-pub fn latitude_to_tile_y(lat: f64, zoom: u8) -> u32 {
-    ((1.0
-        - ((lat * std::f64::consts::PI / 180.0).tan()
-            + 1.0 / (lat * std::f64::consts::PI / 180.0).cos())
-        .ln()
-            / std::f64::consts::PI)
-        / 2.0
-        * f64::powf(2.0, zoom as f64))
-    .floor() as u32
+pub fn latitude_to_tile_y(lat: f64, zoom: u32) -> u32 {
+    let lat_rad = lat.to_radians();
+    ((1 << zoom) as f64 * (1.0 - (lat_rad.tan() + (1.0 / lat_rad.cos())).ln() / PI) / 2.0) as u32
 }
 
 // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations
-pub fn longitude_to_tile_x(lon: f64, zoom: u8) -> u32 {
-    ((lon + 180.0) / 360.0 * f64::powf(2.0, zoom as f64)).floor() as u32
+pub fn longitude_to_tile_x(lon: f64, zoom: u32) -> u32 {
+    ((1 << zoom) as f64 * (lon + 180.0) / 360.0) as u32
 }
 
 // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations
-pub fn tile_y_to_latitude(y: u32, zoom: u8) -> f64 {
-    let n =
-        std::f64::consts::PI - 2.0 * std::f64::consts::PI * y as f64 / f64::powf(2.0, zoom as f64);
-    let intermediate: f64 = 0.5 * (n.exp() - (-n).exp());
-    180.0 / std::f64::consts::PI * intermediate.atan()
+// The opposite of latitude_to_tile_y.
+pub fn tile_y_to_latitude(y: u32, zoom: u32) -> f64 {
+    let n = PI * (1.0 - 2.0 * y as f64 / (1 << zoom) as f64);
+    n.sinh().atan().to_degrees()
 }
 
 // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Implementations
-pub fn tile_x_to_longitude(x: u32, z: u8) -> f64 {
-    x as f64 / f64::powf(2.0, z as f64) * 360.0 - 180.0
+// The opposite of longitude to tile x.
+pub fn tile_x_to_longitude(x: u32, zoom: u32) -> f64 {
+    x as f64 / (1 << zoom) as f64 * 360.0 - 180.0
 }
 
 // Get the numbers of tiles in a given dimension, x or y, at the specified map zoom level.

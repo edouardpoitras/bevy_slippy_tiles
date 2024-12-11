@@ -37,11 +37,9 @@ impl Plugin for SlippyTilesPlugin {
 mod tests {
     use super::*;
 
-    const EPSILON: f64 = 1e-14;
-
-    fn assert_approx_eq(a: f64, b: f64) {
+    fn assert_approx_eq(a: f64, b: f64, epsilon: f64) {
         assert!(
-            (a - b).abs() < EPSILON,
+            (a - b).abs() < epsilon,
             "Expected {} to be approximately equal to {}",
             a,
             b
@@ -49,8 +47,8 @@ mod tests {
     }
 
     fn assert_coords_approx_eq(a: &LatitudeLongitudeCoordinates, b: &LatitudeLongitudeCoordinates) {
-        assert_approx_eq(a.latitude, b.latitude);
-        assert_approx_eq(a.longitude, b.longitude);
+        assert_approx_eq(a.latitude, b.latitude, 1e-14);
+        assert_approx_eq(a.longitude, b.longitude, 1e-14);
     }
 
     #[test]
@@ -78,23 +76,52 @@ mod tests {
     }
 
     #[test]
-    fn test_slippy_tile_coordinates() {
-        let coords =
-            SlippyTileCoordinates::from_latitude_longitude(85.0511287798066, 0.0, ZoomLevel::L1);
-        assert_eq!(coords, SlippyTileCoordinates { x: 1, y: 0 });
-
-        let result = SlippyTileCoordinates::to_latitude_longitude(
-            &SlippyTileCoordinates { x: 1, y: 0 },
-            ZoomLevel::L1,
+    fn test_slippy_tile_coordinates_l0() {
+        assert_eq!(
+            SlippyTileCoordinates::from_latitude_longitude(0.0, 0.0, ZoomLevel::L0),
+            SlippyTileCoordinates { x: 0, y: 0 }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::from_latitude_longitude(-89.0, -179.0, ZoomLevel::L0),
+            SlippyTileCoordinates { x: 0, y: 1 }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::from_latitude_longitude(89.0, 179.0, ZoomLevel::L0),
+            SlippyTileCoordinates { x: 0, y: 0 }
         );
         assert_coords_approx_eq(
-            &result,
+            &SlippyTileCoordinates::to_latitude_longitude(&SlippyTileCoordinates { x: 1, y: 1 }, ZoomLevel::L0),
             &LatitudeLongitudeCoordinates {
-                latitude: 85.0511287798066,
+                latitude: -85.0511287798066,
+                longitude: 180.0,
+            }
+        );
+    }
+
+    #[test]
+    fn test_slippy_tile_coordinates_l1() {
+        assert_coords_approx_eq(
+            &SlippyTileCoordinates::to_latitude_longitude(&SlippyTileCoordinates { x: 1, y: 0 }, ZoomLevel::L1),
+            &LatitudeLongitudeCoordinates {
+                latitude: 89.0511287798066,
+                longitude: 0.0,
+            }
+        );
+        assert_eq!(
+            SlippyTileCoordinates::from_latitude_longitude(0.0, 175.0, ZoomLevel::L1),
+            SlippyTileCoordinates { x: 1, y: 1 }
+        );
+        assert_coords_approx_eq(
+            &SlippyTileCoordinates::to_latitude_longitude(&SlippyTileCoordinates { x: 1, y: 1 }, ZoomLevel::L1),
+            &LatitudeLongitudeCoordinates {
+                latitude: 0.0,
                 longitude: 0.0,
             },
         );
+    }
 
+    #[test]
+    fn test_slippy_tile_coordinates() {
         let coords = SlippyTileCoordinates::from_latitude_longitude(0.0, 0.0, ZoomLevel::L10);
         assert_eq!(coords, SlippyTileCoordinates { x: 512, y: 512 });
 
@@ -221,36 +248,27 @@ mod tests {
         let zoom_level = ZoomLevel::L18;
         // Bevy start (0,0) at the bottom left, so this is close to the bottom left on a map rendered in bevy.
         let world_coords = world_pixel_to_world_coords(42_125.0, 101_661.0, tile_size, zoom_level);
-        let rounded = LatitudeLongitudeCoordinates {
-            latitude: format!("{:.5}", world_coords.latitude).parse().unwrap(),
-            longitude: format!("{:.5}", world_coords.longitude).parse().unwrap(),
-        };
         // We expect world coordinates roughly in the bottom left on a world map.
-        let check = LatitudeLongitudeCoordinates {
-            latitude: -85.00386,
-            longitude: -179.77402,
-        };
-        assert_eq!(rounded, check);
+        assert_approx_eq(world_coords.latitude, -85.00385927087456, 1e-14);
+        assert_approx_eq(world_coords.longitude, -179.7740238904953, 1e-14);
         let pixel = world_coords_to_world_pixel(&world_coords, tile_size, zoom_level);
-        let rounded = (pixel.0.round(), pixel.1.round());
-        assert_eq!(rounded, (42_125.0, 101_661.0));
+        assert_approx_eq(pixel.0, 42_125.0, 1e-5);
+        assert_approx_eq(pixel.1, 101_661.0, 1e-5);
     }
 
     #[test]
     fn test_world_coords_to_pixel() {
-        let world_coords = LatitudeLongitudeCoordinates {
-            latitude: 45.41098,
-            longitude: -75.69854,
-        };
         let tile_size = TileSize::Normal;
         let zoom_level = ZoomLevel::L18;
-        let pixel = world_coords_to_world_pixel(&world_coords, tile_size, zoom_level);
-        assert_eq!((pixel.0 as u32, pixel.1 as u32), (19_443_201, 43_076_862));
-        let world_coords2 = world_pixel_to_world_coords(pixel.0, pixel.1, tile_size, zoom_level);
-        let rounded = LatitudeLongitudeCoordinates {
-            latitude: format!("{:.5}", world_coords2.latitude).parse().unwrap(),
-            longitude: format!("{:.5}", world_coords2.longitude).parse().unwrap(),
+        let world_coords = LatitudeLongitudeCoordinates {
+            latitude: 45.41097678404845,
+            longitude: -75.69854199886322,
         };
-        assert_eq!(world_coords, rounded);
+        let pixel = world_coords_to_world_pixel(&world_coords, tile_size, zoom_level);
+        assert_approx_eq(pixel.0, 19_443_201.0, 1e-14);
+        assert_approx_eq(pixel.1, 43_076_862.0, 1e-14);
+        let world_coords2 = world_pixel_to_world_coords(pixel.0, pixel.1, tile_size, zoom_level);
+        assert_approx_eq(world_coords.latitude, world_coords2.latitude, 1e-14);
+        assert_approx_eq(world_coords.longitude, world_coords2.longitude, 1e-14);
     }
 }
