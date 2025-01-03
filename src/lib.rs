@@ -52,6 +52,13 @@ mod tests {
     }
 
     #[test]
+    fn test_zoom_level_try_from() {
+        assert_eq!(ZoomLevel::try_from(0), Ok(ZoomLevel::L0));
+        assert_eq!(ZoomLevel::try_from(25), Ok(ZoomLevel::L25));
+        assert_eq!(ZoomLevel::try_from(26), Err(()));
+    }
+
+    #[test]
     fn test_tile_size_new() {
         assert_eq!(TileSize::new(256), TileSize::Normal);
         assert_eq!(TileSize::new(512), TileSize::Large);
