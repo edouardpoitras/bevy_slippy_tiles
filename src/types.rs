@@ -1,65 +1,57 @@
-/// The zoom level used when fetching tiles (0 <= zoom <= 25)
-#[derive(Eq, Hash, PartialEq, Clone, Copy, Debug)]
-pub enum ZoomLevel {
-    L0,
-    L1,
-    L2,
-    L3,
-    L4,
-    L5,
-    L6,
-    L7,
-    L8,
-    L9,
-    L10,
-    L11,
-    L12,
-    L13,
-    L14,
-    L15,
-    L16,
-    L17,
-    L18,
-    L19,
-    L20,
-    L21,
-    L22,
-    L23,
-    L24,
-    L25,
+macro_rules! generate_zoom_level {
+    { $( $name:ident => $val:literal, )+ } => {
+        /// The zoom level used when fetching tiles (0 <= zoom <= 25)
+        #[derive(Eq, Hash, PartialEq, Clone, Copy, Debug)]
+        pub enum ZoomLevel {
+            $( $name = $val, )+
+        }
+
+        impl ZoomLevel {
+            pub fn to_u8(&self) -> u8 {
+                *self as u8
+            }
+        }
+
+        impl TryFrom<u8> for ZoomLevel {
+            type Error = ();
+
+            fn try_from(v: u8) -> Result<Self, Self::Error> {
+                match v {
+                    $( $val => Ok(Self::$name), )+
+                    _ => Err(()),
+                }
+            }
+        }
+    };
 }
 
-impl ZoomLevel {
-    pub fn to_u8(&self) -> u8 {
-        match self {
-            ZoomLevel::L0 => 0,
-            ZoomLevel::L1 => 1,
-            ZoomLevel::L2 => 2,
-            ZoomLevel::L3 => 3,
-            ZoomLevel::L4 => 4,
-            ZoomLevel::L5 => 5,
-            ZoomLevel::L6 => 6,
-            ZoomLevel::L7 => 7,
-            ZoomLevel::L8 => 8,
-            ZoomLevel::L9 => 9,
-            ZoomLevel::L10 => 10,
-            ZoomLevel::L11 => 11,
-            ZoomLevel::L12 => 12,
-            ZoomLevel::L13 => 13,
-            ZoomLevel::L14 => 14,
-            ZoomLevel::L15 => 15,
-            ZoomLevel::L16 => 16,
-            ZoomLevel::L17 => 17,
-            ZoomLevel::L18 => 18,
-            ZoomLevel::L19 => 19,
-            ZoomLevel::L20 => 20,
-            ZoomLevel::L21 => 21,
-            ZoomLevel::L22 => 22,
-            ZoomLevel::L23 => 23,
-            ZoomLevel::L24 => 24,
-            ZoomLevel::L25 => 25,
-        }
-    }
+generate_zoom_level! {
+    L0 => 0,
+    L1 => 1,
+    L2 => 2,
+    L3 => 3,
+    L4 => 4,
+    L5 => 5,
+    L6 => 6,
+    L7 => 7,
+    L8 => 8,
+    L9 => 9,
+    L10 => 10,
+    L11 => 11,
+    L12 => 12,
+    L13 => 13,
+    L14 => 14,
+    L15 => 15,
+    L16 => 16,
+    L17 => 17,
+    L18 => 18,
+    L19 => 19,
+    L20 => 20,
+    L21 => 21,
+    L22 => 22,
+    L23 => 23,
+    L24 => 24,
+    L25 => 25,
 }
 
 /// The size of the tiles being requested - either 256px (Normal), 512px (Large), or 768px (VeryLarge).
