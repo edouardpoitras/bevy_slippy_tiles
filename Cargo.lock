@@ -998,7 +998,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_slippy_tiles"
-version = "0.8.0"
+version = "0.8.1"
 dependencies = [
  "bevy",
  "ehttp",
