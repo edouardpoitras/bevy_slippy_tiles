@@ -6,6 +6,10 @@ description = "Provides slippy tile fetching functionality in the Bevy game engi
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/edouardpoitras/bevy_slippy_tiles"
 
+[features]
+default = ["display"]
+display = []
+
 [dependencies]
 bevy = "0.15"
 ehttp = { version = "0.5", features = ["native-async"] }
@@ -14,3 +18,9 @@ googleprojection = "1.2"
 [[example]]
 name = "simple"
 path = "examples/simple.rs"
+required-features = ["display"]
+
+[[example]]
+name = "interactive"
+path = "examples/interactive.rs"
+required-features = ["display"]

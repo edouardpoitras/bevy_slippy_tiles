@@ -2,6 +2,7 @@
 
 mod constants;
 mod coordinates;
+#[cfg(feature = "display")]
 mod display;
 mod download;
 mod settings;
@@ -10,6 +11,7 @@ mod types;
 
 pub use constants::*;
 pub use coordinates::*;
+#[cfg(feature = "display")]
 pub use display::*;
 pub use download::*;
 pub use settings::*;
@@ -28,8 +30,10 @@ impl Plugin for SlippyTilesPlugin {
             .add_event::<DownloadSlippyTilesEvent>()
             .add_event::<SlippyTileDownloadedEvent>()
             .add_systems(Update, systems::download_slippy_tiles)
-            .add_systems(Update, systems::download_slippy_tiles_completed)
-            .add_systems(Update, display::display_tiles);
+            .add_systems(Update, systems::download_slippy_tiles_completed);
+
+        #[cfg(feature = "display")]
+        app.add_systems(Update, display::display_tiles);
     }
 }
 

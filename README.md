@@ -94,6 +94,17 @@ SlippyTilesSettings {
 }
 ```
 
+### Cargo Features
+
+This crate provides optional Cargo features for customization:
+
+- **`display`** (enabled by default): Enables automatic Slippy tile rendering
+
+To disable this feature:
+
+```sh
+cargo build --no-default-features
+```
 
 ## Bevy Compatibility
 
