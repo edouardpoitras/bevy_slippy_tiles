@@ -17,7 +17,7 @@ pub use download::*;
 pub use settings::*;
 pub use types::*;
 
-use bevy::prelude::{App, Plugin, Update};
+use bevy::prelude::{App, Plugin, Startup, Update};
 
 pub struct SlippyTilesPlugin;
 
@@ -26,9 +26,9 @@ impl Plugin for SlippyTilesPlugin {
         app.insert_resource(SlippyTileDownloadStatus::new())
             .insert_resource(SlippyTileDownloadTasks::new())
             .insert_resource(systems::DownloadRateLimiter::default())
-            .insert_resource(systems::ActiveDownloads::default())
             .add_event::<DownloadSlippyTilesEvent>()
             .add_event::<SlippyTileDownloadedEvent>()
+            .add_systems(Startup, systems::initialize_semaphore)
             .add_systems(Update, systems::download_slippy_tiles)
             .add_systems(Update, systems::download_slippy_tiles_completed);
 
