@@ -51,12 +51,7 @@ impl DownloadRateLimiter {
         }
 
         // Check if we can make a new request
-        if self.requests.len() < settings.rate_limit_requests {
-            self.requests.push_back(now);
-            true
-        } else {
-            false
-        }
+        self.requests.len() < settings.rate_limit_requests
     }
 
     fn buffer_request(
@@ -104,6 +99,8 @@ impl DownloadRateLimiter {
                     active_downloads,
                     settings,
                 );
+
+                self.requests.push_back(now);
             } else {
                 break;
             }
