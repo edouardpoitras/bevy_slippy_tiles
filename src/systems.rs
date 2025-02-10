@@ -204,29 +204,13 @@ pub fn download_slippy_tiles(
                             tile_size: download_slippy_tile.tile_size,
                         }) {
                             if matches!(status.load_status, DownloadStatus::Downloading) {
-                                // Re-download if timed out
-                                if !rate_limiter.can_make_request(Instant::now(), &slippy_tiles_settings) {
-                                    rate_limiter.buffer_request(
-                                        (x, y),
-                                        download_slippy_tile.zoom_level,
-                                        download_slippy_tile.tile_size,
-                                        slippy_tiles_settings.endpoint.clone(),
-                                        filename,
-                                    );
-                                } else {
-                                    download_and_track_slippy_tile(
-                                        spc,
-                                        download_slippy_tile.zoom_level,
-                                        download_slippy_tile.tile_size,
-                                        slippy_tiles_settings.endpoint.clone(),
-                                        filename,
-                                        &mut slippy_tile_download_tasks,
-                                        &mut slippy_tile_download_status,
-                                        &asset_server,
-                                        &active_downloads,
-                                        &slippy_tiles_settings,
-                                    );
-                                }
+                                rate_limiter.buffer_request(
+                                    (x, y),
+                                    download_slippy_tile.zoom_level,
+                                    download_slippy_tile.tile_size,
+                                    slippy_tiles_settings.endpoint.clone(),
+                                    filename,
+                                );
                             }
                         }
                     }
@@ -234,28 +218,13 @@ pub fn download_slippy_tiles(
                     (UseCache::No, _, _)
                     // OR not downloading yet and no file exists on disk.
                     | (UseCache::Yes, AlreadyDownloaded::No, FileExists::No) => {
-                        if !rate_limiter.can_make_request(Instant::now(), &slippy_tiles_settings) {
-                            rate_limiter.buffer_request(
-                                (x, y),
-                                download_slippy_tile.zoom_level,
-                                download_slippy_tile.tile_size,
-                                slippy_tiles_settings.endpoint.clone(),
-                                filename,
-                            );
-                        } else {
-                            download_and_track_slippy_tile(
-                                spc,
-                                download_slippy_tile.zoom_level,
-                                download_slippy_tile.tile_size,
-                                slippy_tiles_settings.endpoint.clone(),
-                                filename,
-                                &mut slippy_tile_download_tasks,
-                                &mut slippy_tile_download_status,
-                                &asset_server,
-                                &active_downloads,
-                                &slippy_tiles_settings,
-                            );
-                        }
+                        rate_limiter.buffer_request(
+                            (x, y),
+                            download_slippy_tile.zoom_level,
+                            download_slippy_tile.tile_size,
+                            slippy_tiles_settings.endpoint.clone(),
+                            filename,
+                        );
                     }
                     // Cache can be used and we have the file on disk.
                     (UseCache::Yes, _, FileExists::Yes) => load_and_track_slippy_tile_from_disk(
