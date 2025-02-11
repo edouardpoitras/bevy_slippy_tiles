@@ -1,21 +1,14 @@
+use async_lock::Semaphore;
 use bevy::{
     asset::{
         io::{AssetReaderError, AssetSourceId},
         AssetServer, AsyncWriteExt as _,
     },
     ecs::event::EventReader,
-    prelude::{debug, warn, EventWriter, Res, ResMut, Resource},
+    prelude::{debug, warn, Commands, EventWriter, Res, ResMut, Resource},
     tasks::{futures_lite::future, IoTaskPool, Task},
 };
-use std::{
-    collections::VecDeque,
-    path::Path,
-    sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
-    },
-    time::Instant,
-};
+use std::{collections::VecDeque, path::Path, sync::Arc, time::Instant};
 
 use crate::{
     AlreadyDownloaded, Coordinates, DownloadSlippyTilesEvent, DownloadStatus, FileExists,
@@ -51,12 +44,7 @@ impl DownloadRateLimiter {
         }
 
         // Check if we can make a new request
-        if self.requests.len() < settings.rate_limit_requests {
-            self.requests.push_back(now);
-            true
-        } else {
-            false
-        }
+        self.requests.len() < settings.rate_limit_requests
     }
 
     fn buffer_request(
@@ -81,7 +69,7 @@ impl DownloadRateLimiter {
         slippy_tile_download_tasks: &mut ResMut<SlippyTileDownloadTasks>,
         slippy_tile_download_status: &mut ResMut<SlippyTileDownloadStatus>,
         asset_server: &AssetServer,
-        active_downloads: &ActiveDownloads,
+        download_semaphore: &DownloadSemaphore,
         settings: &SlippyTilesSettings,
     ) {
         let now = Instant::now();
@@ -101,9 +89,11 @@ impl DownloadRateLimiter {
                     slippy_tile_download_tasks,
                     slippy_tile_download_status,
                     asset_server,
-                    active_downloads,
+                    download_semaphore,
                     settings,
                 );
+
+                self.requests.push_back(now);
             } else {
                 break;
             }
@@ -112,12 +102,24 @@ impl DownloadRateLimiter {
 }
 
 #[derive(Resource)]
-pub struct ActiveDownloads(Arc<AtomicUsize>);
+pub struct DownloadSemaphore(Arc<Semaphore>);
 
-impl Default for ActiveDownloads {
-    fn default() -> Self {
-        Self(Arc::new(AtomicUsize::new(0)))
+impl DownloadSemaphore {
+    fn new(n: usize) -> Self {
+        Self(Arc::new(Semaphore::new(n)))
     }
+
+    fn semaphore(&self) -> Arc<Semaphore> {
+        Arc::clone(&self.0)
+    }
+}
+
+pub(crate) fn initialize_semaphore(
+    mut commands: Commands,
+    slippy_tiles_settings: Res<SlippyTilesSettings>,
+) {
+    let semaphore = DownloadSemaphore::new(slippy_tiles_settings.max_concurrent_downloads);
+    commands.insert_resource(semaphore);
 }
 
 /// System that listens for DownloadSlippyTiles events and submits individual tile requests in separate threads.
@@ -127,7 +129,7 @@ pub fn download_slippy_tiles(
     mut slippy_tile_download_status: ResMut<SlippyTileDownloadStatus>,
     mut slippy_tile_download_tasks: ResMut<SlippyTileDownloadTasks>,
     mut rate_limiter: ResMut<DownloadRateLimiter>,
-    active_downloads: Res<ActiveDownloads>,
+    download_semaphore: Res<DownloadSemaphore>,
     asset_server: Res<AssetServer>,
 ) {
     // First process any buffered requests
@@ -135,7 +137,7 @@ pub fn download_slippy_tiles(
         &mut slippy_tile_download_tasks,
         &mut slippy_tile_download_status,
         &asset_server,
-        &active_downloads,
+        &download_semaphore,
         &slippy_tiles_settings,
     );
 
@@ -151,27 +153,6 @@ pub fn download_slippy_tiles(
 
         for x in min_x..=max_x {
             for y in min_y..=max_y {
-                // Check concurrent download limit
-                if active_downloads.0.load(Ordering::Relaxed)
-                    >= slippy_tiles_settings.max_concurrent_downloads
-                {
-                    warn!("Max concurrent downloads reached, buffering tile download");
-                    rate_limiter.buffer_request(
-                        (x, y),
-                        download_slippy_tile.zoom_level,
-                        download_slippy_tile.tile_size,
-                        slippy_tiles_settings.endpoint.clone(),
-                        get_tile_filename(
-                            slippy_tiles_settings.get_tiles_directory_string(),
-                            download_slippy_tile.zoom_level,
-                            x,
-                            y,
-                            download_slippy_tile.tile_size,
-                        ),
-                    );
-                    continue;
-                }
-
                 let spc = SlippyTileCoordinates { x, y };
                 let tiles_directory = slippy_tiles_settings.get_tiles_directory_string();
                 let filename = get_tile_filename(
@@ -204,29 +185,13 @@ pub fn download_slippy_tiles(
                             tile_size: download_slippy_tile.tile_size,
                         }) {
                             if matches!(status.load_status, DownloadStatus::Downloading) {
-                                // Re-download if timed out
-                                if !rate_limiter.can_make_request(Instant::now(), &slippy_tiles_settings) {
-                                    rate_limiter.buffer_request(
-                                        (x, y),
-                                        download_slippy_tile.zoom_level,
-                                        download_slippy_tile.tile_size,
-                                        slippy_tiles_settings.endpoint.clone(),
-                                        filename,
-                                    );
-                                } else {
-                                    download_and_track_slippy_tile(
-                                        spc,
-                                        download_slippy_tile.zoom_level,
-                                        download_slippy_tile.tile_size,
-                                        slippy_tiles_settings.endpoint.clone(),
-                                        filename,
-                                        &mut slippy_tile_download_tasks,
-                                        &mut slippy_tile_download_status,
-                                        &asset_server,
-                                        &active_downloads,
-                                        &slippy_tiles_settings,
-                                    );
-                                }
+                                rate_limiter.buffer_request(
+                                    (x, y),
+                                    download_slippy_tile.zoom_level,
+                                    download_slippy_tile.tile_size,
+                                    slippy_tiles_settings.endpoint.clone(),
+                                    filename,
+                                );
                             }
                         }
                     }
@@ -234,28 +199,13 @@ pub fn download_slippy_tiles(
                     (UseCache::No, _, _)
                     // OR not downloading yet and no file exists on disk.
                     | (UseCache::Yes, AlreadyDownloaded::No, FileExists::No) => {
-                        if !rate_limiter.can_make_request(Instant::now(), &slippy_tiles_settings) {
-                            rate_limiter.buffer_request(
-                                (x, y),
-                                download_slippy_tile.zoom_level,
-                                download_slippy_tile.tile_size,
-                                slippy_tiles_settings.endpoint.clone(),
-                                filename,
-                            );
-                        } else {
-                            download_and_track_slippy_tile(
-                                spc,
-                                download_slippy_tile.zoom_level,
-                                download_slippy_tile.tile_size,
-                                slippy_tiles_settings.endpoint.clone(),
-                                filename,
-                                &mut slippy_tile_download_tasks,
-                                &mut slippy_tile_download_status,
-                                &asset_server,
-                                &active_downloads,
-                                &slippy_tiles_settings,
-                            );
-                        }
+                        rate_limiter.buffer_request(
+                            (x, y),
+                            download_slippy_tile.zoom_level,
+                            download_slippy_tile.tile_size,
+                            slippy_tiles_settings.endpoint.clone(),
+                            filename,
+                        );
                     }
                     // Cache can be used and we have the file on disk.
                     (UseCache::Yes, _, FileExists::Yes) => load_and_track_slippy_tile_from_disk(
@@ -313,7 +263,7 @@ fn download_and_track_slippy_tile(
     slippy_tile_download_tasks: &mut ResMut<SlippyTileDownloadTasks>,
     slippy_tile_download_status: &mut ResMut<SlippyTileDownloadStatus>,
     asset_server: &AssetServer,
-    active_downloads: &ActiveDownloads,
+    download_semaphore: &DownloadSemaphore,
     settings: &SlippyTilesSettings,
 ) {
     let task = download_slippy_tile(
@@ -323,7 +273,7 @@ fn download_and_track_slippy_tile(
         endpoint,
         filename.clone(),
         asset_server,
-        active_downloads.0.clone(),
+        download_semaphore,
         settings.max_retries,
     );
 
@@ -345,7 +295,7 @@ fn download_slippy_tile(
     endpoint: String,
     filename: String,
     asset_server: &AssetServer,
-    active_downloads: Arc<AtomicUsize>,
+    download_semaphore: &DownloadSemaphore,
     max_retries: u32,
 ) -> Task<SlippyTileDownloadTaskResult> {
     debug!(
@@ -357,7 +307,7 @@ fn download_slippy_tile(
         tile_url,
         filename,
         asset_server,
-        active_downloads,
+        download_semaphore,
         max_retries,
     )
 }
@@ -383,13 +333,12 @@ fn spawn_slippy_tile_download_task(
     tile_url: String,
     filename: String,
     asset_server: &AssetServer,
-    active_downloads: Arc<AtomicUsize>,
+    download_semaphore: &DownloadSemaphore,
     max_retries: u32,
 ) -> Task<SlippyTileDownloadTaskResult> {
     let thread_pool = IoTaskPool::get();
     let asset_server = asset_server.clone();
-
-    active_downloads.fetch_add(1, Ordering::SeqCst);
+    let semaphore = download_semaphore.semaphore();
 
     thread_pool.spawn(async move {
         let mut retries = 0;
@@ -409,7 +358,11 @@ fn spawn_slippy_tile_download_task(
                 ]),
             };
 
-            match ehttp::fetch_async(request).await {
+            let result = {
+                let _guard = semaphore.acquire().await;
+                ehttp::fetch_async(request).await
+            };
+            match result {
                 Ok(response) => {
                     if response.status == 200 {
                         let asset_source = asset_server.get_source(AssetSourceId::Default).unwrap();
@@ -457,8 +410,6 @@ fn spawn_slippy_tile_download_task(
                 }
             }
         };
-
-        active_downloads.fetch_sub(1, Ordering::SeqCst);
 
         match result {
             Ok(()) => SlippyTileDownloadTaskResult {

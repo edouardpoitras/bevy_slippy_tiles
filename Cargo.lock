@@ -1000,6 +1000,7 @@ dependencies = [
 name = "bevy_slippy_tiles"
 version = "0.8.2"
 dependencies = [
+ "async-lock",
  "bevy",
  "ehttp",
  "googleprojection",

@@ -11,6 +11,7 @@ default = ["display"]
 display = []
 
 [dependencies]
+async-lock = "3.0"
 bevy = "0.15"
 ehttp = { version = "0.5", features = ["native-async"] }
 googleprojection = "1.2"
