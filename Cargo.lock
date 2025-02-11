@@ -998,7 +998,7 @@ dependencies = [
 
 [[package]]
 name = "bevy_slippy_tiles"
-version = "0.8.2"
+version = "0.8.3"
 dependencies = [
  "async-lock",
  "bevy",
