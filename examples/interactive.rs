@@ -96,7 +96,7 @@ fn setup(
         radius: Radius(2),
         use_cache: true,
     };
-    download_slippy_tile_events.send(slippy_tile_event);
+    download_slippy_tile_events.write(slippy_tile_event);
 }
 
 /// System handling map panning functionality using the left mouse button
@@ -111,7 +111,7 @@ fn pan_camera(
     mouse_button: Res<ButtonInput<MouseButton>>,
     q_window: Query<&Window, With<PrimaryWindow>>,
 ) {
-    let window = q_window.single();
+    let window = q_window.single().unwrap();
 
     // Start panning when left mouse button is pressed
     if mouse_button.just_pressed(MouseButton::Left) {
@@ -129,7 +129,7 @@ fn pan_camera(
 
     // If we're panning and have cursor movement
     if pan_state.is_panning {
-        let mut camera_transform = camera_query.single_mut();
+        let mut camera_transform = camera_query.single_mut().unwrap();
 
         if let Some(current_position) = window.cursor_position() {
             if let Some(last_position) = pan_state.last_cursor_position {
@@ -185,8 +185,8 @@ fn handle_zoom(
         // Only proceed if zoom level actually changed
         if new_level != current_level {
             // Convert cursor position to world coordinates before zoom
-            if let Some(cursor_pos) = q_window.single().cursor_position() {
-                let (camera, camera_transform) = camera_query.single();
+            if let Some(cursor_pos) = q_window.single().unwrap().cursor_position() {
+                let (camera, camera_transform) = camera_query.single().unwrap();
                 if let Some(cursor_world_pos) = camera
                     .viewport_to_world_2d(camera_transform, cursor_pos)
                     .ok()
@@ -237,7 +237,7 @@ fn handle_zoom(
                         radius: Radius(2),
                         use_cache: true,
                     };
-                    download_slippy_tile_events.send(slippy_tile_event);
+                    download_slippy_tile_events.write(slippy_tile_event);
                 }
             }
         }
@@ -259,8 +259,8 @@ fn handle_click(
     current_zoom: Res<CurrentZoom>,
 ) {
     if mouse_button.just_pressed(MouseButton::Right) {
-        let (camera, camera_transform) = camera_query.single();
-        let window = q_window.single();
+        let (camera, camera_transform) = camera_query.single().unwrap();
+        let window = q_window.single().unwrap();
 
         if let Some(cursor_position) = window.cursor_position() {
             if let Some(world_2d_position) = camera

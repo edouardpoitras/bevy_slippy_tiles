@@ -36,5 +36,5 @@ fn request_slippy_tiles(
         radius: Radius(2), // Request one layer of surrounding tiles (2 = two layers of surrounding tiles - 25 total, 3 = three layers of surrounding tiles - 49 total, etc).
         use_cache: true, // Don't make request if already requested previously, or if file already exists in tiles directory.
     };
-    download_slippy_tile_events.send(slippy_tile_event);
+    download_slippy_tile_events.write(slippy_tile_event);
 }

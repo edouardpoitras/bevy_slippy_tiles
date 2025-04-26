@@ -1,11 +1,13 @@
-use crate::coordinates::{Coordinates, SlippyTileCoordinates};
-use crate::types::{DownloadStatus, TileSize, ZoomLevel};
+use std::path::{Path, PathBuf};
+
 use bevy::{
     prelude::{Event, Resource},
     tasks::Task,
-    utils::hashbrown::HashMap,
 };
-use std::path::{Path, PathBuf};
+use bevy_platform::collections::HashMap;
+
+use crate::coordinates::{Coordinates, SlippyTileCoordinates};
+use crate::types::{DownloadStatus, TileSize, ZoomLevel};
 
 // Unique representation of a slippy tile download task.
 #[derive(Eq, PartialEq, Hash, Clone)]

@@ -479,7 +479,7 @@ pub fn download_slippy_tiles_completed(
                 },
             );
             // Notify any event consumers.
-            slippy_tile_downloaded_events.send(SlippyTileDownloadedEvent {
+            slippy_tile_downloaded_events.write(SlippyTileDownloadedEvent {
                 zoom_level: stdtk.zoom_level,
                 tile_size: stdtk.tile_size,
                 coordinates: Coordinates::from_slippy_tile_coordinates(
