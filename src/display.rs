@@ -13,7 +13,7 @@ pub fn display_tiles(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     settings: Res<SlippyTilesSettings>,
-    mut tile_events: EventReader<SlippyTileDownloadedEvent>,
+    mut tile_events: MessageReader<SlippyTileDownloadedEvent>,
 ) {
     // Skip if auto-render is disabled
     if !settings.auto_render {

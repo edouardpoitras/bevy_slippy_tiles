@@ -1,8 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use bevy::{
-    prelude::{Event, Resource},
-    tasks::Task,
+    ecs::message::Message, prelude::Resource, tasks::Task
 };
 use bevy_platform::collections::HashMap;
 
@@ -149,7 +148,7 @@ impl Default for SlippyTileDownloadTasks {
 }
 
 /// Users send these events to request slippy tile downloads.
-#[derive(Debug, Event)]
+#[derive(Debug, Message)]
 pub struct DownloadSlippyTilesEvent {
     pub tile_size: TileSize,
     pub zoom_level: ZoomLevel,
@@ -168,7 +167,7 @@ impl DownloadSlippyTilesEvent {
 }
 
 /// The library will generate these events upon successful slippy tile downloads.
-#[derive(Debug, Event)]
+#[derive(Debug, Message)]
 pub struct SlippyTileDownloadedEvent {
     /// The [`TileSize`] used for this downloaded slippy tile.
     pub tile_size: TileSize,

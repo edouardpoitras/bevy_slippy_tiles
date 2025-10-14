@@ -22,7 +22,7 @@ fn main() {
 
 fn request_slippy_tiles(
     mut commands: Commands,
-    mut download_slippy_tile_events: EventWriter<DownloadSlippyTilesEvent>,
+    mut download_slippy_tile_events: MessageWriter<DownloadSlippyTilesEvent>,
 ) {
     commands.spawn(Camera2d::default());
     info!(

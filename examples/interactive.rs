@@ -79,7 +79,7 @@ fn main() {
 /// 3. Sets up a radius of tiles around the center point for better coverage
 fn setup(
     mut commands: Commands,
-    mut download_slippy_tile_events: EventWriter<DownloadSlippyTilesEvent>,
+    mut download_slippy_tile_events: MessageWriter<DownloadSlippyTilesEvent>,
     current_zoom: Res<CurrentZoom>,
 ) {
     commands.spawn(Camera2d::default());
@@ -159,9 +159,9 @@ fn cleanup_tiles(
 
 /// System handling mouse wheel input for zooming
 fn handle_zoom(
-    mut mouse_wheel: EventReader<MouseWheel>,
+    mut mouse_wheel: MessageReader<MouseWheel>,
     mut current_zoom: ResMut<CurrentZoom>,
-    mut download_slippy_tile_events: EventWriter<DownloadSlippyTilesEvent>,
+    mut download_slippy_tile_events: MessageWriter<DownloadSlippyTilesEvent>,
     camera_query: Query<(&Camera, &GlobalTransform)>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     settings: Res<SlippyTilesSettings>,

@@ -47,7 +47,7 @@ fn main() {
         .run();
 }
 
-fn request_slippy_tiles(mut commands: Commands, mut download_slippy_tile_events: EventWriter<DownloadSlippyTilesEvent>) {
+fn request_slippy_tiles(mut commands: Commands, mut download_slippy_tile_events: MessageWriter<DownloadSlippyTilesEvent>) {
     commands.spawn(Camera2dBundle::default());
     let slippy_tile_event = DownloadSlippyTilesEvent {
         tile_size: TileSize::Normal,    // Size of tiles - Normal = 256px, Large = 512px
@@ -110,6 +110,7 @@ cargo build --no-default-features
 
 |bevy|bevy_slippy_tiles|
 |---|---|
+|0.17|0.10|
 |0.16|0.9|
 |0.15|0.8|
 |0.14|0.7|
