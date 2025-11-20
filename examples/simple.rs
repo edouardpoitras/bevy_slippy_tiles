@@ -22,19 +22,19 @@ fn main() {
 
 fn request_slippy_tiles(
     mut commands: Commands,
-    mut download_slippy_tile_events: MessageWriter<DownloadSlippyTilesMessage>,
+    mut download_slippy_tile_messages: MessageWriter<DownloadSlippyTilesMessage>,
 ) {
     commands.spawn(Camera2d::default());
     info!(
         "Requesting slippy tile for latitude/longitude: {:?}",
         (LATITUDE, LONGITUDE)
     );
-    let slippy_tile_event = DownloadSlippyTilesMessage {
+    let slippy_tile_message = DownloadSlippyTilesMessage {
         tile_size: TileSize::Normal, // Size of tiles - Normal = 256px, Large = 512px (not all tile servers).
         zoom_level: ZoomLevel::L18, // Map zoom level (L0 = entire world, L19 = closest zoom level).
         coordinates: Coordinates::from_latitude_longitude(LATITUDE, LONGITUDE),
         radius: Radius(2), // Request one layer of surrounding tiles (2 = two layers of surrounding tiles - 25 total, 3 = three layers of surrounding tiles - 49 total, etc).
         use_cache: true, // Don't make request if already requested previously, or if file already exists in tiles directory.
     };
-    download_slippy_tile_events.write(slippy_tile_event);
+    download_slippy_tile_messages.write(slippy_tile_message);
 }

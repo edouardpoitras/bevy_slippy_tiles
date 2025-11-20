@@ -79,7 +79,7 @@ fn main() {
 /// 3. Sets up a radius of tiles around the center point for better coverage
 fn setup(
     mut commands: Commands,
-    mut download_slippy_tile_events: MessageWriter<DownloadSlippyTilesMessage>,
+    mut download_slippy_tile_messages: MessageWriter<DownloadSlippyTilesMessage>,
     current_zoom: Res<CurrentZoom>,
 ) {
     commands.spawn(Camera2d::default());
@@ -89,14 +89,14 @@ fn setup(
         (LATITUDE, LONGITUDE)
     );
 
-    let slippy_tile_event = DownloadSlippyTilesMessage {
+    let slippy_tile_message = DownloadSlippyTilesMessage {
         tile_size: TileSize::Normal,
         zoom_level: current_zoom.level,
         coordinates: Coordinates::from_latitude_longitude(LATITUDE, LONGITUDE),
         radius: Radius(2),
         use_cache: true,
     };
-    download_slippy_tile_events.write(slippy_tile_event);
+    download_slippy_tile_messages.write(slippy_tile_message);
 }
 
 /// System handling map panning functionality using the left mouse button
@@ -161,7 +161,7 @@ fn cleanup_tiles(
 fn handle_zoom(
     mut mouse_wheel: MessageReader<MouseWheel>,
     mut current_zoom: ResMut<CurrentZoom>,
-    mut download_slippy_tile_events: MessageWriter<DownloadSlippyTilesMessage>,
+    mut download_slippy_tile_messages: MessageWriter<DownloadSlippyTilesMessage>,
     camera_query: Query<(&Camera, &GlobalTransform)>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     settings: Res<SlippyTilesSettings>,
@@ -227,7 +227,7 @@ fn handle_zoom(
                     current_zoom.last_zoom_time = time.elapsed_secs();
 
                     // Request new tiles at the new zoom level
-                    let slippy_tile_event = DownloadSlippyTilesMessage {
+                    let slippy_tile_message = DownloadSlippyTilesMessage {
                         tile_size: TileSize::Normal,
                         zoom_level: current_zoom.level,
                         coordinates: Coordinates::from_latitude_longitude(
@@ -237,7 +237,7 @@ fn handle_zoom(
                         radius: Radius(2),
                         use_cache: true,
                     };
-                    download_slippy_tile_events.write(slippy_tile_event);
+                    download_slippy_tile_messages.write(slippy_tile_message);
                 }
             }
         }
