@@ -14,7 +14,7 @@ use bevy::{
 };
 use bevy_slippy_tiles::{
     world_coords_to_world_pixel, world_pixel_to_world_coords, Coordinates,
-    DownloadSlippyTilesEvent, MapTile, Radius, SlippyTilesPlugin, SlippyTilesSettings, TileSize,
+    DownloadSlippyTilesMessage, MapTile, Radius, SlippyTilesPlugin, SlippyTilesSettings, TileSize,
     ZoomLevel,
 };
 
@@ -79,7 +79,7 @@ fn main() {
 /// 3. Sets up a radius of tiles around the center point for better coverage
 fn setup(
     mut commands: Commands,
-    mut download_slippy_tile_events: MessageWriter<DownloadSlippyTilesEvent>,
+    mut download_slippy_tile_events: MessageWriter<DownloadSlippyTilesMessage>,
     current_zoom: Res<CurrentZoom>,
 ) {
     commands.spawn(Camera2d::default());
@@ -89,7 +89,7 @@ fn setup(
         (LATITUDE, LONGITUDE)
     );
 
-    let slippy_tile_event = DownloadSlippyTilesEvent {
+    let slippy_tile_event = DownloadSlippyTilesMessage {
         tile_size: TileSize::Normal,
         zoom_level: current_zoom.level,
         coordinates: Coordinates::from_latitude_longitude(LATITUDE, LONGITUDE),
@@ -161,7 +161,7 @@ fn cleanup_tiles(
 fn handle_zoom(
     mut mouse_wheel: MessageReader<MouseWheel>,
     mut current_zoom: ResMut<CurrentZoom>,
-    mut download_slippy_tile_events: MessageWriter<DownloadSlippyTilesEvent>,
+    mut download_slippy_tile_events: MessageWriter<DownloadSlippyTilesMessage>,
     camera_query: Query<(&Camera, &GlobalTransform)>,
     q_window: Query<&Window, With<PrimaryWindow>>,
     settings: Res<SlippyTilesSettings>,
@@ -227,7 +227,7 @@ fn handle_zoom(
                     current_zoom.last_zoom_time = time.elapsed_secs();
 
                     // Request new tiles at the new zoom level
-                    let slippy_tile_event = DownloadSlippyTilesEvent {
+                    let slippy_tile_event = DownloadSlippyTilesMessage {
                         tile_size: TileSize::Normal,
                         zoom_level: current_zoom.level,
                         coordinates: Coordinates::from_latitude_longitude(

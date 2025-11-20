@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy_slippy_tiles::{
-    Coordinates, DownloadSlippyTilesEvent, Radius, SlippyTilesPlugin, SlippyTilesSettings,
+    Coordinates, DownloadSlippyTilesMessage, Radius, SlippyTilesPlugin, SlippyTilesSettings,
     TileSize, ZoomLevel,
 };
 
@@ -22,14 +22,14 @@ fn main() {
 
 fn request_slippy_tiles(
     mut commands: Commands,
-    mut download_slippy_tile_events: MessageWriter<DownloadSlippyTilesEvent>,
+    mut download_slippy_tile_events: MessageWriter<DownloadSlippyTilesMessage>,
 ) {
     commands.spawn(Camera2d::default());
     info!(
         "Requesting slippy tile for latitude/longitude: {:?}",
         (LATITUDE, LONGITUDE)
     );
-    let slippy_tile_event = DownloadSlippyTilesEvent {
+    let slippy_tile_event = DownloadSlippyTilesMessage {
         tile_size: TileSize::Normal, // Size of tiles - Normal = 256px, Large = 512px (not all tile servers).
         zoom_level: ZoomLevel::L18, // Map zoom level (L0 = entire world, L19 = closest zoom level).
         coordinates: Coordinates::from_latitude_longitude(LATITUDE, LONGITUDE),

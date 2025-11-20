@@ -1,8 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use bevy::{
-    ecs::message::Message, prelude::Resource, tasks::Task
-};
+use bevy::{ecs::message::Message, prelude::Resource, tasks::Task};
 use bevy_platform::collections::HashMap;
 
 use crate::coordinates::{Coordinates, SlippyTileCoordinates};
@@ -149,7 +147,7 @@ impl Default for SlippyTileDownloadTasks {
 
 /// Users send these events to request slippy tile downloads.
 #[derive(Debug, Message)]
-pub struct DownloadSlippyTilesEvent {
+pub struct DownloadSlippyTilesMessage {
     pub tile_size: TileSize,
     pub zoom_level: ZoomLevel,
     pub coordinates: Coordinates,
@@ -159,16 +157,20 @@ pub struct DownloadSlippyTilesEvent {
     pub use_cache: bool,
 }
 
-impl DownloadSlippyTilesEvent {
+impl DownloadSlippyTilesMessage {
     pub fn get_slippy_tile_coordinates(&self) -> SlippyTileCoordinates {
         self.coordinates
             .get_slippy_tile_coordinates(self.zoom_level)
     }
 }
 
+/// This is deprecated. See [`DownloadSlippyTilesMessage`](crate::download::DownloadSlippyTilesMessage)
+#[deprecated(since = "0.10.1", note = "Renamed to `DownloadSlippyTilesMessage`.")]
+pub type DownloadSlippyTilesEvent = DownloadSlippyTilesMessage;
+
 /// The library will generate these events upon successful slippy tile downloads.
 #[derive(Debug, Message)]
-pub struct SlippyTileDownloadedEvent {
+pub struct SlippyTileDownloadedMessage {
     /// The [`TileSize`] used for this downloaded slippy tile.
     pub tile_size: TileSize,
     /// The [`ZoomLevel`] used for this downloaded slippy tile.
@@ -179,9 +181,13 @@ pub struct SlippyTileDownloadedEvent {
     pub path: PathBuf,
 }
 
-impl SlippyTileDownloadedEvent {
+impl SlippyTileDownloadedMessage {
     pub fn get_slippy_tile_coordinates(&self) -> SlippyTileCoordinates {
         self.coordinates
             .get_slippy_tile_coordinates(self.zoom_level)
     }
 }
+
+/// This is deprecated. See [`SlippyTileDownloadedMessage`](crate::download::SlippyTileDownloadedMessage)
+#[deprecated(since = "0.10.1", note = "Renamed to `SlippyTileDownloadedMessage`.")]
+pub type SlippyTileDownloadedEvent = SlippyTileDownloadedMessage;

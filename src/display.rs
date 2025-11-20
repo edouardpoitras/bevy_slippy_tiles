@@ -1,5 +1,5 @@
 use crate::{
-    world_coords_to_world_pixel, LatitudeLongitudeCoordinates, SlippyTileDownloadedEvent,
+    world_coords_to_world_pixel, LatitudeLongitudeCoordinates, SlippyTileDownloadedMessage,
     SlippyTilesSettings,
 };
 use bevy::prelude::*;
@@ -13,7 +13,7 @@ pub fn display_tiles(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     settings: Res<SlippyTilesSettings>,
-    mut tile_events: MessageReader<SlippyTileDownloadedEvent>,
+    mut tile_events: MessageReader<SlippyTileDownloadedMessage>,
 ) {
     // Skip if auto-render is disabled
     if !settings.auto_render {
