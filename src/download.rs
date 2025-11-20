@@ -145,7 +145,7 @@ impl Default for SlippyTileDownloadTasks {
     }
 }
 
-/// Users send these events to request slippy tile downloads.
+/// Users send these messages to request slippy tile downloads.
 #[derive(Debug, Message)]
 pub struct DownloadSlippyTilesMessage {
     pub tile_size: TileSize,
@@ -168,7 +168,7 @@ impl DownloadSlippyTilesMessage {
 #[deprecated(since = "0.10.1", note = "Renamed to `DownloadSlippyTilesMessage`.")]
 pub type DownloadSlippyTilesEvent = DownloadSlippyTilesMessage;
 
-/// The library will generate these events upon successful slippy tile downloads.
+/// The library will generate these messages upon successful slippy tile downloads.
 #[derive(Debug, Message)]
 pub struct SlippyTileDownloadedMessage {
     /// The [`TileSize`] used for this downloaded slippy tile.

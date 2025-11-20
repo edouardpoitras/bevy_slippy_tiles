@@ -8,9 +8,9 @@
 
 A helper bevy plugin to handle downloading and displaying OpenStreetMap-compliant [slippy tiles](https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames).
 
-[`DownloadSlippyTilesEvent`] can be fired to request one or more slippy tile downloads.
+[`DownloadSlippyTilesMessage`] can be fired to request one or more slippy tile downloads.
 
-[`SlippyTileDownloadedEvent`] is fired when a requested slippy tile has been retrieved successfully. The file path is stored in the event and can be used with the asset loader.
+[`SlippyTileDownloadedMessage`] is fired when a requested slippy tile has been retrieved successfully. The file path is stored in the message and can be used with the asset loader.
 
 ## Features
 
@@ -47,16 +47,16 @@ fn main() {
         .run();
 }
 
-fn request_slippy_tiles(mut commands: Commands, mut download_slippy_tile_events: MessageWriter<DownloadSlippyTilesEvent>) {
+fn request_slippy_tiles(mut commands: Commands, mut download_slippy_tile_messages: MessageWriter<DownloadSlippyTilesMessage>) {
     commands.spawn(Camera2dBundle::default());
-    let slippy_tile_event = DownloadSlippyTilesEvent {
+    let slippy_tile_message = DownloadSlippyTilesMessage {
         tile_size: TileSize::Normal,    // Size of tiles - Normal = 256px, Large = 512px
         zoom_level: ZoomLevel::L18,     // Map zoom level (L0 = entire world, L19 = closest)
         coordinates: Coordinates::from_latitude_longitude(LATITUDE, LONGITUDE),
         radius: Radius(2),              // Request surrounding tiles (2 = 25 tiles total)
         use_cache: true,                // Use cached tiles if available
     };
-    download_slippy_tile_events.send(slippy_tile_event);
+    download_slippy_tile_messages.send(slippy_tile_message);
 }
 ```
 
