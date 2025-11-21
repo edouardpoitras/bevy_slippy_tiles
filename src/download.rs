@@ -1,8 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use bevy::{
-    ecs::message::Message, prelude::Resource, tasks::Task
-};
+use bevy::{ecs::message::Message, prelude::Resource, tasks::Task};
 use bevy_platform::collections::HashMap;
 
 use crate::coordinates::{Coordinates, SlippyTileCoordinates};

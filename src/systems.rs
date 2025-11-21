@@ -4,7 +4,7 @@ use bevy::{
         io::{AssetReaderError, AssetSourceId},
         AssetServer, AsyncWriteExt as _,
     },
-    prelude::{debug, warn, Commands, MessageWriter, MessageReader, Res, ResMut, Resource},
+    prelude::{debug, warn, Commands, MessageReader, MessageWriter, Res, ResMut, Resource},
     tasks::{futures_lite::future, IoTaskPool, Task},
 };
 use std::{collections::VecDeque, path::Path, sync::Arc, time::Instant};
