@@ -26,8 +26,8 @@ impl Plugin for SlippyTilesPlugin {
         app.insert_resource(SlippyTileDownloadStatus::new())
             .insert_resource(SlippyTileDownloadTasks::new())
             .insert_resource(systems::DownloadRateLimiter::default())
-            .add_message::<DownloadSlippyTilesEvent>()
-            .add_message::<SlippyTileDownloadedEvent>()
+            .add_message::<DownloadSlippyTilesMessage>()
+            .add_message::<SlippyTileDownloadedMessage>()
             .add_systems(Startup, systems::initialize_semaphore)
             .add_systems(Update, systems::download_slippy_tiles)
             .add_systems(Update, systems::download_slippy_tiles_completed);

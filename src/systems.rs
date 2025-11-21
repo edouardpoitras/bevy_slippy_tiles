@@ -10,9 +10,9 @@ use bevy::{
 use std::{collections::VecDeque, path::Path, sync::Arc, time::Instant};
 
 use crate::{
-    AlreadyDownloaded, Coordinates, DownloadSlippyTilesEvent, DownloadStatus, FileExists,
+    AlreadyDownloaded, Coordinates, DownloadSlippyTilesMessage, DownloadStatus, FileExists,
     SlippyTileCoordinates, SlippyTileDownloadStatus, SlippyTileDownloadTaskKey,
-    SlippyTileDownloadTaskResult, SlippyTileDownloadTasks, SlippyTileDownloadedEvent,
+    SlippyTileDownloadTaskResult, SlippyTileDownloadTasks, SlippyTileDownloadedMessage,
     SlippyTilesSettings, TileDownloadStatus, TileSize, UseCache, ZoomLevel,
 };
 
@@ -121,9 +121,9 @@ pub(crate) fn initialize_semaphore(
     commands.insert_resource(semaphore);
 }
 
-/// System that listens for DownloadSlippyTiles events and submits individual tile requests in separate threads.
+/// System that listens for DownloadSlippyTiles messages and submits individual tile requests in separate threads.
 pub fn download_slippy_tiles(
-    mut download_slippy_tile_events: MessageReader<DownloadSlippyTilesEvent>,
+    mut download_slippy_tile_messages: MessageReader<DownloadSlippyTilesMessage>,
     slippy_tiles_settings: Res<SlippyTilesSettings>,
     mut slippy_tile_download_status: ResMut<SlippyTileDownloadStatus>,
     mut slippy_tile_download_tasks: ResMut<SlippyTileDownloadTasks>,
@@ -140,7 +140,7 @@ pub fn download_slippy_tiles(
         &slippy_tiles_settings,
     );
 
-    for download_slippy_tile in download_slippy_tile_events.read() {
+    for download_slippy_tile in download_slippy_tile_messages.read() {
         let radius = download_slippy_tile.radius.0;
         let slippy_tile_coords = download_slippy_tile.get_slippy_tile_coordinates();
 
@@ -457,11 +457,11 @@ fn spawn_fake_slippy_tile_download_task(filename: String) -> Task<SlippyTileDown
     })
 }
 
-/// System that checks for completed slippy tile downloads and notifies via a SlippyTileDownloadedEvent event.
+/// System that checks for completed slippy tile downloads and notifies via a SlippyTileDownloadedMessage message.
 pub fn download_slippy_tiles_completed(
     mut slippy_tile_download_status: ResMut<SlippyTileDownloadStatus>,
     mut slippy_tile_download_tasks: ResMut<SlippyTileDownloadTasks>,
-    mut slippy_tile_downloaded_events: MessageWriter<SlippyTileDownloadedEvent>,
+    mut slippy_tile_downloaded_messages: MessageWriter<SlippyTileDownloadedMessage>,
 ) {
     let mut to_be_removed: Vec<SlippyTileDownloadTaskKey> = Vec::new();
     for (stdtk, task) in slippy_tile_download_tasks.0.iter_mut() {
@@ -477,8 +477,8 @@ pub fn download_slippy_tiles_completed(
                     load_status: DownloadStatus::Downloaded,
                 },
             );
-            // Notify any event consumers.
-            slippy_tile_downloaded_events.write(SlippyTileDownloadedEvent {
+            // Notify any message consumers.
+            slippy_tile_downloaded_messages.write(SlippyTileDownloadedMessage {
                 zoom_level: stdtk.zoom_level,
                 tile_size: stdtk.tile_size,
                 coordinates: Coordinates::from_slippy_tile_coordinates(

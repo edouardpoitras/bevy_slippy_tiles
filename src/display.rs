@@ -1,5 +1,5 @@
 use crate::{
-    world_coords_to_world_pixel, LatitudeLongitudeCoordinates, SlippyTileDownloadedEvent,
+    world_coords_to_world_pixel, LatitudeLongitudeCoordinates, SlippyTileDownloadedMessage,
     SlippyTilesSettings,
 };
 use bevy::prelude::*;
@@ -13,31 +13,31 @@ pub fn display_tiles(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     settings: Res<SlippyTilesSettings>,
-    mut tile_events: MessageReader<SlippyTileDownloadedEvent>,
+    mut tile_messages: MessageReader<SlippyTileDownloadedMessage>,
 ) {
     // Skip if auto-render is disabled
     if !settings.auto_render {
         return;
     }
 
-    for event in tile_events.read() {
+    for message in tile_messages.read() {
         // Convert reference coordinates to pixel coordinates
         let reference_point = LatitudeLongitudeCoordinates {
             latitude: settings.reference_latitude,
             longitude: settings.reference_longitude,
         };
         let (ref_x, ref_y) =
-            world_coords_to_world_pixel(&reference_point, event.tile_size, event.zoom_level);
+            world_coords_to_world_pixel(&reference_point, message.tile_size, message.zoom_level);
 
         // Convert tile coordinates to pixel coordinates
-        let current_coords = match event.coordinates {
+        let current_coords = match message.coordinates {
             crate::Coordinates::LatitudeLongitude(coords) => coords,
             crate::Coordinates::SlippyTile(coords) => {
-                coords.to_latitude_longitude(event.zoom_level)
+                coords.to_latitude_longitude(message.zoom_level)
             },
         };
         let (tile_x, tile_y) =
-            world_coords_to_world_pixel(&current_coords, event.tile_size, event.zoom_level);
+            world_coords_to_world_pixel(&current_coords, message.tile_size, message.zoom_level);
 
         // Calculate offset from reference point
         let mut transform_x = (tile_x - ref_x) as f32;
@@ -51,7 +51,7 @@ pub fn display_tiles(
 
         // Spawn the tile sprite
         commands.spawn((
-            Sprite::from_image(asset_server.load(event.path.clone())),
+            Sprite::from_image(asset_server.load(message.path.clone())),
             Transform::from_xyz(transform_x, transform_y, settings.z_layer),
             MapTile,
         ));
