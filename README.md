@@ -48,7 +48,7 @@ fn main() {
 }
 
 fn request_slippy_tiles(mut commands: Commands, mut download_slippy_tile_messages: MessageWriter<DownloadSlippyTilesMessage>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
     let slippy_tile_message = DownloadSlippyTilesMessage {
         tile_size: TileSize::Normal,    // Size of tiles - Normal = 256px, Large = 512px
         zoom_level: ZoomLevel::L18,     // Map zoom level (L0 = entire world, L19 = closest)
@@ -56,7 +56,7 @@ fn request_slippy_tiles(mut commands: Commands, mut download_slippy_tile_message
         radius: Radius(2),              // Request surrounding tiles (2 = 25 tiles total)
         use_cache: true,                // Use cached tiles if available
     };
-    download_slippy_tile_messages.send(slippy_tile_message);
+    download_slippy_tile_messages.write(slippy_tile_message);
 }
 ```
 
