@@ -77,6 +77,9 @@ The plugin uses reasonable defaults but can be configured:
 - `auto_render`: Toggle automatic tile rendering (disable for manual control)
 
 ```rust,no_run
+# use bevy::prelude::Transform;
+# use std::time::Duration;
+# use bevy_slippy_tiles::SlippyTilesSettings;
 SlippyTilesSettings {
     endpoint: "https://tile.openstreetmap.org".into(), // Tile server endpoint
     tiles_directory: "tiles/".into(), // Cache directory
@@ -92,6 +95,7 @@ SlippyTilesSettings {
     z_layer: 1.0, // Z coordinate for tiles (default: 0.0)
     auto_render: true, // Enable automatic rendering (default: true)
 }
+# ;
 ```
 
 ### Cargo Features
