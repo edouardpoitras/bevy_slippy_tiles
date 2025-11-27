@@ -26,7 +26,9 @@ Here's a snippet showing how to download and display map tiles at a specific loc
 
 Run with: `cargo run --example simple`
 
-```rust,ignore
+```rust,no_run
+# #[cfg(feature = "display")]
+# {
 use bevy::prelude::*;
 use bevy_slippy_tiles::*;
 
@@ -48,7 +50,7 @@ fn main() {
 }
 
 fn request_slippy_tiles(mut commands: Commands, mut download_slippy_tile_messages: MessageWriter<DownloadSlippyTilesMessage>) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d::default());
     let slippy_tile_message = DownloadSlippyTilesMessage {
         tile_size: TileSize::Normal,    // Size of tiles - Normal = 256px, Large = 512px
         zoom_level: ZoomLevel::L18,     // Map zoom level (L0 = entire world, L19 = closest)
@@ -56,8 +58,9 @@ fn request_slippy_tiles(mut commands: Commands, mut download_slippy_tile_message
         radius: Radius(2),              // Request surrounding tiles (2 = 25 tiles total)
         use_cache: true,                // Use cached tiles if available
     };
-    download_slippy_tile_messages.send(slippy_tile_message);
+    download_slippy_tile_messages.write(slippy_tile_message);
 }
+# }
 ```
 
 ## Configuration
@@ -76,7 +79,12 @@ The plugin uses reasonable defaults but can be configured:
 - `z_layer`: Z coordinate for rendered tiles, useful for layering with other sprites
 - `auto_render`: Toggle automatic tile rendering (disable for manual control)
 
-```rust,ignore
+```rust,no_run
+# use bevy::prelude::Transform;
+# use std::time::Duration;
+# use bevy_slippy_tiles::SlippyTilesSettings;
+# #[cfg(feature = "display")]
+# {
 SlippyTilesSettings {
     endpoint: "https://tile.openstreetmap.org".into(), // Tile server endpoint
     tiles_directory: "tiles/".into(), // Cache directory
@@ -92,6 +100,8 @@ SlippyTilesSettings {
     z_layer: 1.0, // Z coordinate for tiles (default: 0.0)
     auto_render: true, // Enable automatic rendering (default: true)
 }
+# ;
+# }
 ```
 
 ### Cargo Features
