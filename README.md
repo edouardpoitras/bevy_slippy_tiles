@@ -50,7 +50,7 @@ fn main() {
 }
 
 fn request_slippy_tiles(mut commands: Commands, mut download_slippy_tile_messages: MessageWriter<DownloadSlippyTilesMessage>) {
-    commands.spawn(Camera2d::default());
+    commands.spawn(Camera2d);
     let slippy_tile_message = DownloadSlippyTilesMessage {
         tile_size: TileSize::Normal,    // Size of tiles - Normal = 256px, Large = 512px
         zoom_level: ZoomLevel::L18,     // Map zoom level (L0 = entire world, L19 = closest)

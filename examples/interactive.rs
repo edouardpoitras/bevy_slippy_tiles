@@ -82,7 +82,7 @@ fn setup(
     mut download_slippy_tile_messages: MessageWriter<DownloadSlippyTilesMessage>,
     current_zoom: Res<CurrentZoom>,
 ) {
-    commands.spawn(Camera2d::default());
+    commands.spawn(Camera2d);
 
     info!(
         "Requesting slippy tile for latitude/longitude: {:?}",
