@@ -187,9 +187,8 @@ fn handle_zoom(
             // Convert cursor position to world coordinates before zoom
             if let Some(cursor_pos) = q_window.single().unwrap().cursor_position() {
                 let (camera, camera_transform) = camera_query.single().unwrap();
-                if let Some(cursor_world_pos) = camera
-                    .viewport_to_world_2d(camera_transform, cursor_pos)
-                    .ok()
+                if let Ok(cursor_world_pos) =
+                    camera.viewport_to_world_2d(camera_transform, cursor_pos)
                 {
                     // Get the reference point's pixel coordinates
                     let (ref_x, ref_y) = world_coords_to_world_pixel(
@@ -263,9 +262,8 @@ fn handle_click(
         let window = q_window.single().unwrap();
 
         if let Some(cursor_position) = window.cursor_position() {
-            if let Some(world_2d_position) = camera
-                .viewport_to_world_2d(camera_transform, cursor_position)
-                .ok()
+            if let Ok(world_2d_position) =
+                camera.viewport_to_world_2d(camera_transform, cursor_position)
             {
                 // Convert map position to world coordinates considering the reference point and offset
                 let offset = settings
