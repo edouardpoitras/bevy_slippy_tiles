@@ -22,6 +22,8 @@ A helper bevy plugin to handle downloading and displaying OpenStreetMap-complian
 
 ## Example
 
+https://user-images.githubusercontent.com/14075649/214139995-c69fc4c7-634e-487a-af0d-a8ac42b6851f.mp4
+
 Here's a snippet showing how to download and display map tiles at a specific location. This app will load a slippy tile and its surrounding 24 tiles at the specified latitude and longitude.
 
 Run with: `cargo run --example simple`
