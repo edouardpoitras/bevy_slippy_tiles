@@ -120,6 +120,7 @@ cargo build --no-default-features
 
 |bevy|bevy_slippy_tiles|
 |---|---|
+|0.18|0.11|
 |0.17|0.10|
 |0.16|0.9|
 |0.15|0.8|
