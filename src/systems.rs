@@ -16,6 +16,9 @@ use crate::{
     SlippyTilesSettings, TileDownloadStatus, TileSize, UseCache, ZoomLevel,
 };
 
+const USER_AGENT: &str =
+    "bevy_slippy_tiles/0.7.0 (https://github.com/edouardpoitras/bevy_slippy_tiles)";
+
 #[derive(Debug)]
 struct BufferedRequest {
     coords: (u32, u32),
@@ -350,7 +353,7 @@ fn spawn_slippy_tile_download_task(
             let request = ehttp::Request::new(
                 ehttp::Method::GET,
                 &tile_url,
-                &[("User-Agent", "bevy_slippy_tiles/0.7.0 (https://github.com/edouardpoitras/bevy_slippy_tiles)"), ("Accept", "image/png")],
+                &[("User-Agent", USER_AGENT), ("Accept", "image/png")],
             );
 
             let result = {
@@ -367,7 +370,7 @@ fn spawn_slippy_tile_download_task(
                                 warn!("Failed to get asset writer: {:?}", e);
                                 retries += 1;
                                 continue;
-                            }
+                            },
                         };
 
                         let mut writer = match asset_writer.write(Path::new(&filename)).await {
@@ -376,7 +379,7 @@ fn spawn_slippy_tile_download_task(
                                 warn!("Failed to create file writer: {:?}", e);
                                 retries += 1;
                                 continue;
-                            }
+                            },
                         };
 
                         if let Err(e) = writer.write_all(&response.bytes).await {
@@ -397,12 +400,12 @@ fn spawn_slippy_tile_download_task(
                         retries += 1;
                         continue;
                     }
-                }
+                },
                 Err(e) => {
                     warn!("Download error: {:?}", e);
                     retries += 1;
                     continue;
-                }
+                },
             }
         };
 
@@ -415,7 +418,7 @@ fn spawn_slippy_tile_download_task(
                 SlippyTileDownloadTaskResult {
                     path: Path::new(&filename).to_path_buf(),
                 }
-            }
+            },
         }
     })
 }
