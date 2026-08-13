@@ -347,15 +347,11 @@ fn spawn_slippy_tile_download_task(
                 break Err("Max retries reached".to_string());
             }
 
-            let request = ehttp::Request {
-                method: "GET".to_owned(),
-                url: tile_url.clone(),
-                body: vec![],
-                headers: ehttp::Headers::new(&[
-                    ("User-Agent", "bevy_slippy_tiles/0.7.0 (https://github.com/edouardpoitras/bevy_slippy_tiles)"),
-                    ("Accept", "image/png"),
-                ]),
-            };
+            let request = ehttp::Request::new(
+                ehttp::Method::GET,
+                &tile_url,
+                &[("User-Agent", "bevy_slippy_tiles/0.7.0 (https://github.com/edouardpoitras/bevy_slippy_tiles)"), ("Accept", "image/png")],
+            );
 
             let result = {
                 let _guard = semaphore.acquire().await;
