@@ -1,6 +1,6 @@
 [package]
 name = "bevy_slippy_tiles"
-version = "0.11.0"
+version = "0.12.0"
 edition = "2021"
 description = "Provides slippy tile fetching functionality in the Bevy game engine"
 license = "MIT OR Apache-2.0"
@@ -12,8 +12,8 @@ display = []
 
 [dependencies]
 async-lock = "3.0"
-bevy = "0.18"
-bevy_platform = "0.18"
+bevy = "0.19"
+bevy_platform = "0.19"
 ehttp = { version = "0.5", features = ["native-async"] }
 googleprojection = "1.2"
 
